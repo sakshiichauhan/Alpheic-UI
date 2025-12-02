@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
+/* Instrument serif - italics */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap'); 
+@import url('https://fonts.googleapis.com/css?family=Poppins:100,100italic,200,200italic,300,300italic,regular,italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic');
+
+@import "tailwindcss";
+.italic {
+  font-style: italic;
+}
+
+/* Custom variant for dark mode */
+@custom-variant dark (&:is(.dark *));
+
+/* Theme configuration */
+@theme inline {
+  
+  --color: #5AC8DC;
+  --sub-text: #444444;
+  --medium-text: #535353;
+  --hero-text: #3E3E3E;
+  --border-color: #F0F1F2;
+
+  
+  
+  --font-urbanist: 'Urbanist', sans-serif;
+  --font-instrument-sans: 'Instrument Sans', sans-serif;
+  --font-instrument-serif: 'Instrument Serif', serif;
+  --font-instrument-serif-italics: 'Instrument Serif', serif;
+  --font-poppins: 'Poppins', sans-serif;
+}
+
+/* .dark {
+} */
+
+html,
+body {
+  font-family: var(--font-instrument-sans);
+}
+
+.font-instrument-sans {
+  font-family: var(--font-instrument-sans);
+}
+
+.font-instrument-serif {
+  font-family: var(--font-instrument-serif);
+}
+
+.font-instrument-serif-italics {
+  font-family: var(--font-instrument-serif-italics);
+  font-style: italic;
+}
+
+.font-poppins {
+  font-family: var(--font-poppins);
+}
+
+.font-urbanist {
+  font-family: var(--font-urbanist);
+}
+
+
+
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+
+  .no-scrollbar {
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+  }
+
+  /* Double lined text in vision page */
+  .text-outline {
+      text-shadow:
+          -2px -2px 2px #FAFAFA,
+          2px -2px 2px  #FAFAFA,
+          -2px 2px 2px  #FAFAFA,
+          2px 2px 2px  #FAFAFA;
+  }
+
+}
+
