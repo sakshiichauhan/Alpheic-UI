@@ -1,6 +1,7 @@
 
 import dummyImage from "@/assets/dummy.png";
 import { DefaultButton } from "@/Components/Button";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 type Post = {
   id: string;
@@ -86,18 +87,40 @@ function PostCard({ post }: { post: Post }) {
   
   
 
-export default function DesignInsights() {
+interface DesignInsightsProps {
+  heading?: string;
+  description?: string;
+  buttonData?: string;
+}
+
+export default function DesignInsights({ heading, description, buttonData }: DesignInsightsProps) {
   return (
     <section className="w-full">
         <div className="flex flex-col gap-[32px]">
           <div className="w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]  py-10 md:py-[60px] lg:py-[12px] flex flex-col xl:gap-[40px] lg:gap-[48px] md:gap-[32px] gap-[24px]">
             {/* Heading */}
-            <h2 className=" text-center 2xl:text-[72px] xl:text-[68px] md:text-[48px] sm:text-[40px] text-[32px] leading-none text-black">
-              Design <span className="md:font-semibold">insights</span>
-            </h2>
-            <p className="text-center text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist " >
-            Explore thoughts and trends shaping the future of digital experience:
-            </p>
+            {heading ? (
+              <ParsedHtml
+                htmlContent={heading}
+                as="h2"
+                className="text-center 2xl:text-[72px] xl:text-[68px] md:text-[48px] sm:text-[40px] text-[32px] leading-none text-black"
+              />
+            ) : (
+              <h2 className="text-center 2xl:text-[72px] xl:text-[68px] md:text-[48px] sm:text-[40px] text-[32px] leading-none text-black">
+                Design <span className="md:font-semibold">insights</span>
+              </h2>
+            )}
+            {description ? (
+              <ParsedHtml
+                htmlContent={description}
+                as="p"
+                className="text-center text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist"
+              />
+            ) : (
+              <p className="text-center text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist">
+                Explore thoughts and trends shaping the future of digital experience:
+              </p>
+            )}
 
             {/* Cards */}
             <div className="flex w-full lg:flex-row flex-col justify-center 2xl:gap-[48px] xl:gap-[40px] gap-[24px]">
@@ -107,7 +130,9 @@ export default function DesignInsights() {
             </div> 
           </div>
           <div className="lg:flex w-full items-center justify-center hidden">
-              <DefaultButton href="#" onClick={() => {}}>View All Insights</DefaultButton>
+              <DefaultButton href="#" onClick={() => {}}>
+                {buttonData || "View All Insights"}
+              </DefaultButton>
           </div>
         </div>
     </section>

@@ -9,6 +9,7 @@ import Indus6 from "@/assets/ServicePage/Industries/Indus6.png";
 import Indus7 from "@/assets/ServicePage/Industries/Indus7.png";
 import Indus8 from "@/assets/ServicePage/Industries/Indus8.png";
 import Indus9 from "@/assets/ServicePage/Industries/Indus9.png";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 interface Industry {
   id: number;
@@ -29,7 +30,10 @@ const industries: Industry[] = [
   { id: 9, name: "Transportation", icon: Indus9 },
 ];
 
-const Industries: React.FC<{ className?: string }> = ({ className = "" }) => {
+const Industries: React.FC<{ className?: string; heading?: string }> = ({ 
+  className = "", 
+  heading 
+}) => {
   const [highlightedIds, setHighlightedIds] = useState<Set<number>>(
     new Set(industries.filter(i => i.isHighlighted).map(i => i.id))
   );
@@ -52,12 +56,21 @@ const Industries: React.FC<{ className?: string }> = ({ className = "" }) => {
       <div className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px]
  ">
         {/* Header */}
-        <h2
-          id="industries-heading"
-          className="text-center text-[32px] md:text-[60px] lg:text-[72px] font-semibold 2xl:mb-16 xl:mb-14 mb-6 md:mb-12 "
-        >
-          Industries <span className="font-light">We Empower</span>
-        </h2>
+        {heading ? (
+          <ParsedHtml
+            htmlContent={heading}
+            as="h2"
+            id="industries-heading"
+            className="text-center text-[32px] md:text-[60px] lg:text-[72px]  2xl:mb-16 xl:mb-14 mb-6 md:mb-12 "
+          />
+        ) : (
+          <h2
+            id="industries-heading"
+            className="text-center text-[32px] md:text-[60px] lg:text-[72px]  2xl:mb-16 xl:mb-14 mb-6 md:mb-12 "
+          >
+            Industries <span className="">We Empower</span>
+          </h2>
+        )}
 
         {/* Grid of Industries */}
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 2xl:gap-4 xl:gap-6 md:gap-6 gap-4">

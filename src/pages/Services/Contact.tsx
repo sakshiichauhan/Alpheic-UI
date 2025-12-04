@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useInView, useMotionValue, useAnimationFrame } from "framer-motion";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 import logo1 from "@/assets/logo/logo1.png";
 import logo2 from "@/assets/logo/logo2.png";
@@ -136,22 +137,43 @@ function MarqueeRow({
   );
 }
 
-export default function Contact() {
+interface ContactProps {
+  heading?: string;
+  description?: string;
+}
+
+export default function Contact({ heading, description }: ContactProps) {
   return (
     <section className="w-full lg:py-[64px] md:py-[48px] py-[32px]">
       <div className="flex w-full flex-col gap-8">
 
         {/* Trusted By heading */}
         <div className="flex flex-col items-center text-center">
-          <div className="flex justify-center lg:text-[72px] md:text-[32px] sm:text-[24px] text-[20px] font-semibold">
-            Trusted
-            <span className="font-light ml-2">By</span>
-          </div>
+          {heading ? (
+            <ParsedHtml
+              htmlContent={heading}
+              as="div"
+              className="flex justify-center lg:text-[72px] md:text-[32px] sm:text-[24px] text-[20px] "
+            />
+          ) : (
+            <div className="flex justify-center lg:text-[72px] md:text-[32px] sm:text-[24px] text-[20px] font-semibold">
+              Trusted
+              <span className="font-light ml-2">By</span>
+            </div>
+          )}
 
           {/* Subtitle below heading */}
-          <p className="mt-2 max-w-[1098px] text-center text-2xl font-light font-urbanist text-[#3E3E3E]">
-          In collaboration with global tools and partners:
-          </p>
+          {description ? (
+            <ParsedHtml
+              htmlContent={description}
+              as="p"
+              className="mt-2 max-w-[1098px] text-center text-2xl font-light font-urbanist text-[#3E3E3E]"
+            />
+          ) : (
+            <p className="mt-2 max-w-[1098px] text-center text-2xl font-light font-urbanist text-[#3E3E3E]">
+              In collaboration with global tools and partners:
+            </p>
+          )}
         </div>
 
         {/* Logo marquee */}

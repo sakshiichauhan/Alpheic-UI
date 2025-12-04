@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
-import { submitConsultingForm } from '@/store/Slice/letsTalkForm/ConsultingThunk';
+import { submitConsultingForm } from '@/store/Slice/letsTalkForm/consultingThunk';
 import { submitInquiryForm } from '@/store/Slice/letsTalkForm/inquiryThunk';
 import { submitSupportForm } from '@/store/Slice/letsTalkForm/supportThunk';
 import { uploadFile } from '@/store/Slice/letsTalkForm/uploadThunk';
@@ -147,7 +147,18 @@ const ContactForm: React.FC = () => {
       const uploadResults = await Promise.all(uploadPromises);
       const filePaths = uploadResults
         .filter((result) => result && result.file_url)
-        .map((result) => result.file_url);
+        .map((result) => {
+          // Extract just the file path (e.g., "/files/filename.pdf")
+          // Remove any domain/URL prefix if present
+          const fileUrl = result.file_url;
+          if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+            // Extract path from full URL
+            const urlObj = new URL(fileUrl);
+            return urlObj.pathname;
+          }
+          // Already a path, return as-is
+          return fileUrl;
+        });
       
       if (filePaths.length !== files.length) {
         throw new Error('Some files failed to upload. Please try again.');
@@ -180,7 +191,18 @@ const ContactForm: React.FC = () => {
       const uploadResults = await Promise.all(uploadPromises);
       const filePaths = uploadResults
         .filter((result) => result && result.file_url)
-        .map((result) => result.file_url);
+        .map((result) => {
+          // Extract just the file path (e.g., "/files/filename.pdf")
+          // Remove any domain/URL prefix if present
+          const fileUrl = result.file_url;
+          if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+            // Extract path from full URL
+            const urlObj = new URL(fileUrl);
+            return urlObj.pathname;
+          }
+          // Already a path, return as-is
+          return fileUrl;
+        });
       
       if (filePaths.length !== files.length) {
         throw new Error('Some files failed to upload. Please try again.');
@@ -267,13 +289,19 @@ const ContactForm: React.FC = () => {
       phone_number: formData.phoneNumber.trim(),
       company_name: formData.organization.trim(),
       message: formData.message.trim(),
-      select_services: selectedServices.length > 0 ? selectedServices : [],
+      // Map selected services to the required object structure
+      select_services:
+        selectedServices.length > 0
+          ? selectedServices.map((service) => ({ service_name: service }))
+          : [],
+      // Use the first uploaded file path as the single attachment (if any)
+      attachment:
+        uploadedFilePaths.length > 0 && uploadedFilePaths[0].trim() !== ''
+          ? uploadedFilePaths[0].trim()
+          : '',
+      // Always include docstatus so the record is saved as SUBMITTED
+      docstatus: 1,
     };
-    
-    // Only include attachments if there are valid uploaded files
-    if (uploadedFilePaths.length > 0) {
-      apiFormData.attachments = uploadedFilePaths.filter(path => path && path.trim() !== '');
-    }
 
     try {
       // Submit based on selected reason
@@ -542,7 +570,7 @@ const ContactForm: React.FC = () => {
 
               {/* Helper text */}
               <p className="text-[14px] text-[var(--medium-text)] font-urbanist">
-                Upload a brief, presentation, Profile or any supporting material
+              Upload a brief, presentation, Profile or any supporting material
               </p>
 
               {/* Divider */}

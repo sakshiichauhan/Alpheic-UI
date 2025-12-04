@@ -1,6 +1,7 @@
 import photo1 from "@/assets/Pilot_assets/i.png";
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import { ArrowUpRight } from "lucide-react";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 
 /* ==================== Data ==================== */
@@ -13,7 +14,14 @@ type PilotCard = {
   tags: string[];
 };
 
-const CARDS: PilotCard[] = [
+interface StartPilotProps {
+  title?: string;
+  heading?: string;
+  description?: string;
+  buttonData?: string;
+}
+
+const DEFAULT_CARDS: PilotCard[] = [
   {
     id: "you",
     title: "Start a Pilot",
@@ -31,7 +39,7 @@ const CARDS: PilotCard[] = [
 /* ==================== UI Bits ==================== */
 
 
-function PilotCardView({ card }: { card: PilotCard }) {
+function PilotCardView({ card, title, heading, description, buttonData }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string }) {
   
   return (
     <div className="relative w-full h-fit overflow-hidden  box-border">
@@ -51,21 +59,45 @@ function PilotCardView({ card }: { card: PilotCard }) {
           <div className="relative z-10">
           <div className="flex h-full flex-row justify-between  min-[1700px]:pl-[84px] min-[1400px]:pl-[64px] min-[1250px]:pl-[40px] pl-[20px]">
             <div className="max-w-[800px] flex flex-col   min-[1700px]:pt-[84px] min-[1400px]:pt-[64px] min-[1250px]:pt-[40px] pt-[20px]">
-               <h3 className="2xl:text-[72px] xl:text-[52px] lg:text-[40px] text-[32px] font-light">
-               Start a  <span className="font-semibold">Pilot</span>
-               </h3>
+              {title ? (
+                <ParsedHtml
+                  htmlContent={title}
+                  as="h3"
+                  className="2xl:text-[72px] xl:text-[52px] lg:text-[40px] text-[32px] font-light text-white"
+                />
+              ) : (
+                <h3 className="2xl:text-[72px] xl:text-[52px] lg:text-[40px] text-[32px] font-light text-white">
+                  Start a  <span className="font-semibold">Pilot</span>
+                </h3>
+              )}
               
-              <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] text-white ">
-              Experience the Alpheric process
-              </p>
+              {heading ? (
+                <div className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] text-white leading-relaxed">
+                  <ParsedHtml htmlContent={heading} as="div" />
+                </div>
+              ) : (
+                <>
+                  <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] text-white ">
+                    Experience the Alpheric process
+                  </p>
+                  
+                  <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px]  text-white leading-relaxed">
+                    with a <span className="font-semibold">2-week UX/UI Sprint.</span>
+                  </p>
+                </>
+              )}
               
-              <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px]  text-white leading-relaxed">
-              with a <span className="font-semibold">2-week UX/UI Sprint.</span>
-              </p>
-              
-              <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] mt-2 text-white/90 leading-relaxed mb-4">
-              From research to prototype — see how our design thinking drives tangible outcomes.
-              </p>
+              {description ? (
+                <ParsedHtml
+                  htmlContent={description}
+                  as="p"
+                  className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] mt-2 text-white/90 leading-relaxed mb-4"
+                />
+              ) : (
+                <p className="2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] mt-2 text-white/90 leading-relaxed mb-4">
+                  From research to prototype — see how our design thinking drives tangible outcomes.
+                </p>
+              )}
 
               <div className="flex items-center gap-6 p-2 bg-white/10 w-fit">
                 {/* White button */}
@@ -74,7 +106,7 @@ function PilotCardView({ card }: { card: PilotCard }) {
                   className="inline-flex items-center justify-center gap-2 border border-black/10 bg-white xl:px-[34px] px-[30px] xl:py-[16px] py-[12px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)]
                              hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
                 >
-                  Book Now <ArrowUpRight className="w-6 h-auto" />
+                  {buttonData || "Book Now"} <ArrowUpRight className="w-6 h-auto" />
                 </button>
               </div>
             </div>
@@ -99,7 +131,7 @@ function PilotCardView({ card }: { card: PilotCard }) {
 }
 
 
-function PilotCardMobile({ card }: { card: PilotCard }) {
+function PilotCardMobile({ card, title, heading, description, buttonData }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string }) {
   const subtitleLines = card.subtitle.split('\n').filter(line => line.trim());
   
   return (
@@ -121,21 +153,45 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
       <div className="relative z-10 px-4 pb-4 sm:px-6 md:px-8 sm:pb-6 md:pb-8   pt-[90px] sm:pt-[120px] md:pt-[150px] ">
         <div className="flex flex-col gap-6 md:gap-10 sm:gap-8 ">
           <div className="flex flex-col gap-4 md:gap-6 ">
-        <h3 className="text-[24px] sm:text-[32px] md:text-[36px] font-semibold">
-          {card.title}
-        </h3>
+        {title ? (
+          <ParsedHtml
+            htmlContent={title}
+            as="h3"
+            className="text-[24px] sm:text-[32px] md:text-[36px] font-semibold text-white"
+          />
+        ) : (
+          <h3 className="text-[24px] sm:text-[32px] md:text-[36px] font-semibold text-white">
+            {card.title}
+          </h3>
+        )}
 
-        <p className="text-white text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed">
-          {subtitleLines[0]}
-        </p>
+        {heading ? (
+          <div className="text-white text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed">
+            <ParsedHtml htmlContent={heading} as="div" />
+          </div>
+        ) : (
+          <>
+            <p className="text-white text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed">
+              {subtitleLines[0]}
+            </p>
+            
+            <p className="text-white text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed">
+              {subtitleLines[1]}
+            </p>
+          </>
+        )}
         
-        <p className="text-white text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed">
-          {subtitleLines[1]}
-        </p>
-        
-        <p className="text-white/90 text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed mb-4">
-          {subtitleLines[2]}
-        </p>
+        {description ? (
+          <ParsedHtml
+            htmlContent={description}
+            as="p"
+            className="text-white/90 text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed mb-4"
+          />
+        ) : (
+          <p className="text-white/90 text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed mb-4">
+            {subtitleLines[2]}
+          </p>
+        )}
 
         {/* Button */}
         <div className="flex items-center w-fit">
@@ -143,7 +199,7 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
             type="button"
             className="inline-flex items-center justify-center gap-2 border border-black/10 bg-white px-[30px] py-[12px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
           >
-            Book Now <ArrowUpRight className="w-5 h-5" />
+            {buttonData || "Book Now"} <ArrowUpRight className="w-5 h-5" />
           </button>
         </div>
         </div>
@@ -157,21 +213,23 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
 }
 
 
-export default function Study() {
+export default function Study({ title, heading, description, buttonData }: StartPilotProps) {
+  const cards = DEFAULT_CARDS;
+  
   return (
     <div className="w-full px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-[40px] sm:py-[60px] md:py-[80px] lg:py-[100px]">
       {/* Mobile View */}
       <div className="lg:hidden space-y-6">
-        {CARDS.map((card) => (
-          <PilotCardMobile key={`m-${card.id}`} card={card} />
+        {cards.map((card) => (
+          <PilotCardMobile key={`m-${card.id}`} card={card} title={title} heading={heading} description={description} buttonData={buttonData} />
         ))}
       </div>
 
      
       <div className="hidden lg:block">
-        {CARDS.map((card) => (
+        {cards.map((card) => (
           <div key={card.id} className="mb-8">
-            <PilotCardView card={card} />
+            <PilotCardView card={card} title={title} heading={heading} description={description} buttonData={buttonData} />
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight} from "lucide-react";
 import { DefaultButton } from "@/Components/Button";
+import ParsedHtml from "@/Components/ParsedHtml";
 import instagram from "@/assets/logo/insta.png";
 import linkedin from "@/assets/logo/linkdin.png";
 import dribbble from "@/assets/logo/dribble.png";
@@ -80,7 +81,17 @@ const projects = [
   },
 ];
 
-const WorkSection = () => {
+interface WorkSectionProps {
+  heading?: string;
+  description?: string;
+  buttonData?: string | { text: string; href?: string };
+}
+
+const WorkSection = ({ 
+  heading = "Our Work",
+  description = "Integral to our approach is a comprehensive user research phase, discovering general and niche audience needs through quantitative and qualitative research.",
+  buttonData
+}: WorkSectionProps) => {
   const [activeCategory, setActiveCategory] = useState<Category>("All");
 
   const filteredProjects = activeCategory === "All" 
@@ -92,13 +103,24 @@ const WorkSection = () => {
       <div className=" mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-        <h2 className="text-5xl md:text-7xl 2xl:font-light font-medium  mb-6">
-            Our <span className="2xl:font-semibold font-medium">Work</span> 
-          </h2>
-          <p className="text-[#3E3E3E] 2xl:max-w-[960px]  mx-auto text-[14px] md:text-2xl font-urbanist ">
-            Integral to our approach is a comprehensive user research phase, discovering general and
-            niche audience needs through quantitative and qualitative research.
-          </p>
+          {heading ? (
+            <ParsedHtml
+              htmlContent={heading}
+              as="h2"
+              className="text-5xl md:text-7xl 2xl:font-light font-medium mb-6"
+            />
+          ) : (
+            <h2 className="text-5xl md:text-7xl 2xl:font-light font-medium mb-6">
+              Our <span className="2xl:font-semibold font-medium">Work</span>
+            </h2>
+          )}
+          {description && (
+            <ParsedHtml
+              htmlContent={description}
+              as="p"
+              className="text-[#3E3E3E] 2xl:max-w-[960px] mx-auto text-[14px] md:text-2xl font-urbanist"
+            />
+          )}
         </div>
 
         {/* Filter Tabs */}
@@ -127,8 +149,15 @@ const WorkSection = () => {
 
         {/* View All Button */}
         <div className="flex justify-center">
-             {/* View all projects button */}
-      <DefaultButton href="#" onClick={() => {}}>View All Projects</DefaultButton>
+          <DefaultButton 
+            href={typeof buttonData === 'object' ? buttonData.href : '#'} 
+            onClick={() => {}}
+          >
+            {buttonData 
+              ? (typeof buttonData === 'string' ? buttonData : buttonData.text)
+              : 'View All Projects'
+            }
+          </DefaultButton>
         </div>
         
       </div>
@@ -241,10 +270,16 @@ function SocialCta() {
   );
 }
 // Main component that includes both WorkSection and SocialMedia
-const OurWork = () => {
+interface OurWorkProps {
+  heading?: string;
+  description?: string;
+  buttonData?: string | { text: string; href?: string };
+}
+
+const OurWork = ({ heading, description, buttonData }: OurWorkProps) => {
   return (
     <>
-      <WorkSection />
+      <WorkSection heading={heading} description={description} buttonData={buttonData} />
      <SocialCta/>
     </>
   );

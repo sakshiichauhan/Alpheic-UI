@@ -133,7 +133,7 @@ const HomePage: React.FC = () => {
 
             {/* ✅ Floating Video Panel */}
             {isPanelVisible && (
-              <div className="lg:block hidden fixed bottom-12 md:bottom-[50px] md:right-[50px] bg-slate-900 text-white h-[280px] sm:h-[350px] md:h-[409px] w-[180px] sm:w-[200px] md:w-[230px] z-50">
+              <div className="lg:block hidden fixed bottom-12 md:bottom-[50px] md:right-[50px] bg-slate-900 text-white h-[280px] sm:h-[350px] md:h-[280px] w-[180px] sm:w-[200px] md:w-[158px] z-50">
                 <div className="relative">
                   <video
                     ref={videoRef}
@@ -167,7 +167,7 @@ const HomePage: React.FC = () => {
                   {/* CTA Button */}
                   <Link
                     to="/LetsTalk"
-                    className="absolute -bottom-0 left-1/2 transform -translate-x-1/2 w-[130px] sm:w-[173px] pt-3 pb-1 bg-white text-black font-medium text-sm sm:text-xl hover:bg-black hover:text-white transition flex items-center justify-center"
+                    className="absolute -bottom-0 left-1/2 transform -translate-x-1/2 w-[130px] sm:w-[158px] pt-3 pb-1 bg-white text-black font-medium text-sm sm:text-xl hover:bg-black hover:text-white transition flex items-center justify-center"
                   >
                     Let's Talk 👋
                   </Link>

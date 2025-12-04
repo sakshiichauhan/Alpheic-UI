@@ -7,6 +7,7 @@ import Img4 from "@/assets/ServicePage/DesginExpert/Img4.png";
 import Img5 from "@/assets/ServicePage/DesginExpert/Img5.png";
 import Img6 from "@/assets/ServicePage/DesginExpert/Img6.png";
 import Img7 from "@/assets/ServicePage/DesginExpert/Img7.png";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 interface ExpertImage {
   src: string;
@@ -15,7 +16,19 @@ interface ExpertImage {
   isHighlighted?: boolean; 
 }
 
-const DesignExpert: React.FC<{ className?: string }> = ({ className = "" }) => {
+interface DesignExpertProps {
+  className?: string;
+  heading?: string;
+  description?: string;
+  buttonData?: string;
+}
+
+const DesignExpert: React.FC<DesignExpertProps> = ({ 
+  className = "",
+  heading,
+  description,
+  buttonData
+}) => {
   const experts: ExpertImage[] = [
     { src: Img1, name: "Amit Sharma", title: "UX Strategist" },
     { src: Img2, name: "Vikram Singh", title: "Product Designer", isHighlighted: true }, 
@@ -46,16 +59,33 @@ const DesignExpert: React.FC<{ className?: string }> = ({ className = "" }) => {
     >
       <div className="w-full px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-16 md:py-20 lg:py-24">
         <div className="flex flex-col items-center text-center">
-          <h2
-            id="design-experts-heading"
-            className="text-[32px] sm:text-[40px] md:text-5xl lg:text-6xl xl:text-7xl font-light text-black mb-6 md:mb-8 font-urbanist"
-          >
-            Design <span className="font-semibold">Experts</span>
-          </h2>
+          {heading ? (
+            <ParsedHtml
+              htmlContent={heading}
+              as="h2"
+              id="design-experts-heading"
+              className="text-[32px] sm:text-[40px] md:text-5xl lg:text-6xl xl:text-7xl font-light text-black mb-6 md:mb-8 font-urbanist"
+            />
+          ) : (
+            <h2
+              id="design-experts-heading"
+              className="text-[32px] sm:text-[40px] md:text-5xl lg:text-6xl xl:text-7xl font-light text-black mb-6 md:mb-8 font-urbanist"
+            >
+              Design <span className="font-semibold">Experts</span>
+            </h2>
+          )}
 
-          <p className="text-[14px] sm:text-lg md:text-xl lg:text-[22px] text-[#333333] max-w-4xl mx-auto mb-12 md:mb-16 lg:mb-20 leading-relaxed font-urbanist">
-            Meet Alpheric's UX strategists, design researchers, and product innovators who have shaped experiences for startups and enterprises worldwide.
-          </p>
+          {description ? (
+            <ParsedHtml
+              htmlContent={description}
+              as="p"
+              className="text-[14px] sm:text-lg md:text-xl lg:text-[22px] text-[#333333] max-w-4xl mx-auto mb-12 md:mb-16 lg:mb-20 leading-relaxed font-urbanist"
+            />
+          ) : (
+            <p className="text-[14px] sm:text-lg md:text-xl lg:text-[22px] text-[#333333] max-w-4xl mx-auto mb-12 md:mb-16 lg:mb-20 leading-relaxed font-urbanist">
+              Meet Alpheric's UX strategists, design researchers, and product innovators who have shaped experiences for startups and enterprises worldwide.
+            </p>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 lg:gap-10 mb-12 md:mb-16 lg:mb-20">
             {experts.map((expert, index) => {
@@ -109,7 +139,7 @@ const DesignExpert: React.FC<{ className?: string }> = ({ className = "" }) => {
             className="inline-flex items-center gap-2 border-[2px] px-6 sm:px-8 md:px-10 lg:px-12 py-3 md:py-4 text-base sm:text-lg md:text-xl lg:text-2xl transition-colors font-urbanist rounded-sm hover:bg-[#E6F7FF]"
             style={{ borderColor: "#ADD8E6", color: "black" }}
           >
-            View Our Consultants
+            {buttonData || "View Our Consultants"}
             <ArrowUpRight className="h-auto w-4 sm:w-5 md:w-6 lg:w-7" aria-hidden />
           </a>
         </div>

@@ -1,10 +1,12 @@
 import UI from "@/assets/ServicePage/UiDesgin.png";
+import ParsedHtml from "@/Components/ParsedHtml";
 
 type Props = {
   title?: string;
   kicker?: string;
   description?: string;
   className?: string;
+  otherName?: string;
 };
 
 const UiDesgin: React.FC<Props> = ({
@@ -12,6 +14,7 @@ const UiDesgin: React.FC<Props> = ({
   kicker = "At Alpheric, we create user experiences that blend design, data, and purpose.",
   description = `Our UX/UI team transforms complex systems into intuitive digital journeys that drive engagement, efficiency, and growth — helping brands deliver impact through design intelligence.`,
   className = "",
+  otherName,
 }) => {
   return (
     <section
@@ -23,12 +26,21 @@ const UiDesgin: React.FC<Props> = ({
 
           {/* Title with abstract graphic */}
           <div className="relative inline-flex items-center justify-center gap-2 mb-6 flex-wrap">
-            <h1
-              id="ux-heading"
-              className="text-[28px] sm:text-[32px] md:text-6xl lg:text-7xl font-semibold text-[#000000] leading-tight inline-block"
-            >
-              {title}
-            </h1>
+            {title && (
+              <ParsedHtml
+                htmlContent={title}
+                as="h1"
+                id="ux-heading"
+                className="text-[28px] sm:text-[32px] md:text-6xl lg:text-7xl  text-[#000000] leading-tight inline-block"
+              />
+            )}
+            {otherName && (
+              <ParsedHtml
+                htmlContent={otherName}
+                as="span"
+                className="text-[28px] sm:text-[32px] md:text-6xl lg:text-7xl font-semibold text-[#000000] leading-tight"
+              />
+            )}
             <img
               src={UI}
               alt="Abstract UI design element"
@@ -37,14 +49,22 @@ const UiDesgin: React.FC<Props> = ({
           </div>
 
           {/* First paragraph */}
-          <p className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl text-[#3E3E3E] max-w-4xl font-urbanist leading-relaxed mb-3">
-            {kicker}
-          </p>
+          {kicker && (
+            <ParsedHtml
+              htmlContent={kicker}
+              as="p"
+              className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl text-[#3E3E3E] max-w-4xl font-urbanist leading-relaxed mb-3"
+            />
+          )}
 
           {/* Second paragraph */}
-          <p className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl text-[#3E3E3E] max-w-6xl font-urbanist leading-relaxed">
-            {description}
-          </p>
+          {description && (
+            <ParsedHtml
+              htmlContent={description}
+              as="p"
+              className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl text-[#3E3E3E] max-w-6xl font-urbanist leading-relaxed"
+            />
+          )}
         </div>
       </div>
     </section>
