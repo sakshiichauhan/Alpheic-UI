@@ -79,7 +79,7 @@ export const UxDesign = () => {
           title={data?.service_hero_other_name }
           kicker={data?.service_hero_short_description }
           description={data?.service_hero_description }
-         
+        
         />
       )}
 
@@ -136,6 +136,7 @@ export const UxDesign = () => {
           heading={data?.design_consultants_heading}
           description={data?.design_consultants_description}
           buttonData={data?.design_consultants_buttondata}
+          consultants={data?.design_consultants_list}
         />
       )}
       
@@ -154,6 +155,7 @@ export const UxDesign = () => {
         <Contact
           heading={data?.service_brands_heading}
           description={data?.service_brands_description}
+          brands={data?.service_brands_list}
         />
       )}
       

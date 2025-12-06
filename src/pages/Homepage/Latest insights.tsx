@@ -1,4 +1,8 @@
-
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import dummyImage from "@/assets/dummy.png";
 import { DefaultButton } from "@/Components/Button";
 
@@ -87,14 +91,44 @@ function PostCard({ post }: { post: Post }) {
   
 
 export default function LatestInsights() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Conditionally render based on insights flag
+  const shouldShowSection = data?.insights === 1;
+
+  // Use API data if available, otherwise use defaults
+  const heading = data?.insights_heading || '<div class="ql-editor read-mode"><p>Latest <strong>insights</strong></p></div>';
+  const buttonText = data?.insights_buttondata || "View All Insights";
+
+  // Don't render if insights is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
+
   return (
     <section className="w-full px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]  py-10 md:py-[60px] lg:py-[120px] flex flex-col xl:gap-[64px] lg:gap-[48px] md:gap-[32px] gap-[24px]">
         <div className="flex flex-col gap-[32px]">
           <div className="w-full mx-auto">
             {/* Heading */}
-            <h2 className="mb-10 text-center 2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] leading-none text-black">
-              Latest <span className="md:font-semibold">insights</span>
-            </h2>
+            {heading ? (
+              <ParsedHtml
+                htmlContent={heading}
+                as="h2"
+                className="mb-10 text-center 2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] leading-none text-black"
+              />
+            ) : (
+              <h2 className="mb-10 text-center 2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] leading-none text-black">
+                Latest <span className="md:font-semibold">insights</span>
+              </h2>
+            )}
 
             {/* Cards */}
             <div className="flex w-full lg:flex-row flex-col justify-center 2xl:gap-[48px] xl:gap-[40px] gap-[24px]">
@@ -104,7 +138,7 @@ export default function LatestInsights() {
             </div> 
           </div>
           <div className="lg:flex w-full items-center justify-center hidden">
-              <DefaultButton href="/Insights" onClick={() => {}}>View All Insights</DefaultButton>
+              <DefaultButton href="/Insights" onClick={() => {}}>{buttonText}</DefaultButton>
           </div>
         </div>
     </section>

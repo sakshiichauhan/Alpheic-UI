@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store';
+import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
+import { ParsedHtml } from '@/Components/ParsedHtml';
 import p1 from "@/assets/OurProjects/p1.png";
 import p2 from "@/assets/OurProjects/p2.png";
 import Amber from "@/assets/Tools/Amber.png";
@@ -290,10 +294,10 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
                     <h3 className="text-[16px] md:text-[18px] lg:text-[20px] xl:text-[22px] 2xl:text-[24px] font-urbanist font-semibold text-white flex items-center gap-[10px]">
-                      {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1}/></div>
+                      {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1} /></div>
                     </h3>
                     <p className="text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px] 2xl:text-[20px] font-urbanist text-[#EEEEEE] line-clamp-2">
-                      {descriptionText}
+                      {descriptionText}
                     </p>
                   </motion.div>
                 </AnimatePresence>
@@ -310,60 +314,148 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
 // --- 3. Main Page Component ---
 
 const DesignPractice: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Conditionally render based on link_service
+  const shouldShowSection = data?.link_service === 1;
+
+  // Use API data if available, otherwise use defaults
+  const description = data?.link_service_description || "We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.";
+
+  // Get titles from link_service_names array
+  const linkServiceNames = data?.link_service_names || [];
+  
+  // Helper function to get services from API or use defaults
+  const getServices = (serviceItem: LinkServiceNameItem | undefined, defaultServices: string[]): string[] => {
+    if (serviceItem?.service_category_services && Array.isArray(serviceItem.service_category_services) && serviceItem.service_category_services.length > 0) {
+      const mappedServices = serviceItem.service_category_services
+        .map(item => item.service)
+        .filter((service): service is string => Boolean(service));
+      return mappedServices.length > 0 ? mappedServices : defaultServices;
+    }
+    return defaultServices;
+  };
+
+  // Prepare cards data dynamically from linkServiceNames
+  const practiceCards = useMemo(() => {
+    if (!linkServiceNames || linkServiceNames.length === 0) {
+      // Fallback to default cards if no data
+      return [
+        {
+          title: "Digital Design",
+          description: "Identity, UX, UI, web and app interfaces, design systems, motion.",
+          services: digitalDesignServices,
+          imagePosition: 'right' as ImagePosition,
+          gallery: caseStudySlides,
+        },
+        {
+          title: "Space Design",
+          description: "Retail and workplace, facades and signage, exhibitions and installations.",
+          services: spaceDesignServices,
+          imagePosition: 'left' as ImagePosition,
+          gallery: spaceDesignSlides,
+        },
+      ];
+    }
+
+    // Map over linkServiceNames and create card data
+    return linkServiceNames.map((item, index) => {
+      // Alternate image position: even index = right, odd index = left
+      const imagePosition: ImagePosition = index % 2 === 0 ? 'right' : 'left';
+      
+      // Use default services based on index if API doesn't provide services
+      const defaultServicesForIndex = index % 2 === 0 ? digitalDesignServices : spaceDesignServices;
+      
+      // Use default gallery based on index
+      const defaultGallery = index % 2 === 0 ? caseStudySlides : spaceDesignSlides;
+
+      return {
+        title: item.name1 || (index % 2 === 0 ? "Digital Design" : "Space Design"),
+        description: item.service_category_description || 
+          (index % 2 === 0 
+            ? "Identity, UX, UI, web and app interfaces, design systems, motion."
+            : "Retail and workplace, facades and signage, exhibitions and installations."),
+        services: getServices(item, defaultServicesForIndex),
+        imagePosition,
+        gallery: defaultGallery,
+      };
+    });
+  }, [linkServiceNames]);
+
+  // Don't render if link_service is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
+
   return (
     <section className="xl:space-y-[72px] lg:space-y-[52px] md:space-y-[40px] space-y-[32px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] sm:py-[40px] py-[24px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]
  ">
       {/* --- Header --- */}
       <header className="flex flex-col lg:flex-row min-w-0 items-center 2xl:gap-8 lg:gap-6 md:gap-4 sm:gap-2 gap-1 ">
         <h1 className="w-full text-[32px] sm:text-[40px] md:text-[48px] lg:text-[56px] xl:text-[64px] 2xl:text-[72px] font-semibold text-black 2xl:min-w-[680px]">
-          Our Design Practice
+          {data?.link_service_heading ? (
+            <ParsedHtml 
+              htmlContent={data.link_service_heading} 
+              as="span"
+            />
+          ) : (
+            "Our Design Practice"
+          )}
         </h1>
         <p className="min-w-0 text-[14px] sm:text-[18px] md:text-[20px] lg:text-[22px] xl:text-[24px] font-urbanist text-[var(--medium-text)] lg:justify-self-end">
-          We combine logic, emotion, and function to create systems that scale
-          across websites, apps, offices, and stores.
+          {description}
         </p>
       </header>
 
       {/* --- Main Content (Cards) --- */}
       <main className="2xl:space-y-[128px] xl:space-y-[100px] lg:space-y-[80px] md:space-y-[60px] sm:space-y-[40px] space-y-[24px]">
-        {/* Card 1: Digital Design (Image Right) */}
-        <PracticeCard
-          title="Digital Design"
-          description="Identity, UX, UI, web and app interfaces, design systems, motion."
-          services={digitalDesignServices}
-          imageSrc={p1}
-          imageAlt="Laptop showing brand identity examples"
-          imageCaption="Brand identity"
-          imagePosition="right"
-          showNavArrows
-          gallery={caseStudySlides}
-          overlay={{
-            logoLabel: 'amber',
-            headline: 'CricksLab – Smarter Cricket UX',
-            description:
-              'We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.',
-          }}
-          
-        />
+        {practiceCards.map((card, index) => {
+          // Determine image source based on position (alternate between p1 and p2)
+          const imageSrc = index % 2 === 0 ? p1 : p2;
+          const imageAlt = index % 2 === 0 
+            ? "Laptop showing brand identity examples" 
+            : "Two phones showing a chat application";
+          const imageCaption = index % 2 === 0 
+            ? "Brand identity" 
+            : "Retail and experience spaces";
 
-        {/* Card 2: Space Design (Image Left) */}
-        <PracticeCard
-          title="Space Design"
-          description="Retail and workplace, facades and signage, exhibitions and installations."
-          services={spaceDesignServices}
-          imageSrc={p2}
-          imageAlt="Two phones showing a chat application"
-          imageCaption="Retail and experience spaces"
-          imagePosition="left"
-          showNavArrows
-          gallery={spaceDesignSlides}
-          overlay={{
-            logoLabel: 'amber',
-            headline: 'Spatial Journeys with Purpose',
-            description:
-              'We choreograph environments that translate your digital ethos into the physical world.',
-          }}
-        />
+          // Default overlay based on index
+          const defaultOverlay = index % 2 === 0
+            ? {
+                logoLabel: 'amber',
+                headline: 'CricksLab – Smarter Cricket UX',
+                description: 'We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.',
+              }
+            : {
+                logoLabel: 'amber',
+                headline: 'Spatial Journeys with Purpose',
+                description: 'We choreograph environments that translate your digital ethos into the physical world.',
+              };
+
+          return (
+            <PracticeCard
+              key={index}
+              title={card.title}
+              description={card.description}
+              services={card.services}
+              imageSrc={imageSrc}
+              imageAlt={imageAlt}
+              imageCaption={imageCaption}
+              imagePosition={card.imagePosition}
+              showNavArrows={card.gallery && card.gallery.length > 1}
+              gallery={card.gallery}
+              overlay={defaultOverlay}
+            />
+          );
+        })}
       </main>
     </section>
   );

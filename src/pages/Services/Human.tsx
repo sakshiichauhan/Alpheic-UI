@@ -22,7 +22,7 @@ const getImageUrl = (imagePath?: string): string => {
   
   // If it starts with /files/, use the path directly
   if (imagePath.startsWith('/files/')) {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const apiBaseUrl = 'https://work.alpheric.com';
     return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
   }
   
@@ -117,6 +117,7 @@ const HumanCenter: React.FC<HumanCenterProps> = ({
                           src={item.image}
                           alt={item.imageAlt || "Human centered design"}
                           className="h-full w-full object-cover lg:ml-auto"
+                          referrerPolicy="no-referrer"
                           onError={(e) => {
                             // Fallback to default image if image fails to load
                             const target = e.target as HTMLImageElement;
@@ -137,6 +138,7 @@ const HumanCenter: React.FC<HumanCenterProps> = ({
                           src={item.image}
                           alt={item.imageAlt || "Human centered design"}
                           className="h-full w-full object-contain lg:mr-auto"
+                          referrerPolicy="no-referrer"
                           onError={(e) => {
                             // Fallback to default image if image fails to load
                             const target = e.target as HTMLImageElement;

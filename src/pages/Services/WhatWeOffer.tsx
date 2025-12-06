@@ -100,6 +100,7 @@ const WhatWeOffer: React.FC<{ className?: string; heading?: string; cards?: Serv
                     src={imageUrl} 
                     alt={service.title || "Service icon"} 
                     className={`2xl:w-[72px] 2xl:h-[72px] w-[40px] h-[40px] ${isDefaultIcon ? '' : 'object-contain'}`}
+                    referrerPolicy="no-referrer"
                     onError={(e) => {
                       // Fallback to default icon if image fails to load
                       const target = e.target as HTMLImageElement;

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useInView, useMotionValue, useAnimationFrame } from "framer-motion";
 import ParsedHtml from "@/Components/ParsedHtml";
+import type { ServiceBrandListItem } from "@/store/Slice/UxDesgin/UxDesgin";
 
 import logo1 from "@/assets/logo/logo1.png";
 import logo2 from "@/assets/logo/logo2.png";
@@ -21,6 +22,39 @@ const LOGOS: Item[] = [
   { src: logo6 as unknown as string, alt: "Client logo 6" },
   { src: logo7 as unknown as string, alt: "Client logo 7" },
 ];
+
+// Helper function to construct image URL from API path
+const getImageUrl = (imagePath?: string): string => {
+  if (!imagePath) return '';
+  
+  // If it's already a full URL, return as-is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it starts with /files/, construct full URL
+  if (imagePath.startsWith('/files/')) {
+    const apiBaseUrl = 'https://work.alpheric.com';
+    return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
+  }
+  
+  // Fallback to empty string if path is invalid
+  return '';
+};
+
+// Helper function to convert brand list to Item[] format
+const convertBrandsToItems = (brands?: ServiceBrandListItem[]): Item[] => {
+  if (!brands || brands.length === 0) {
+    return LOGOS; // Fallback to hardcoded logos
+  }
+
+  return brands
+    .filter((brand) => brand.attach_logo) // Only include brands with logos
+    .map((brand) => ({
+      src: getImageUrl(brand.attach_logo),
+      alt: brand.brand_name || brand.name1 || brand.name || "Client logo",
+    }));
+};
 
 type RowProps = {
   items: Item[];
@@ -102,6 +136,7 @@ function MarqueeRow({
         className="block object-contain opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0 h-[41px] sm:h-[60px] md:h-[72px] lg:h-[124px] xl:h-[156px]"
         style={{ width: "auto" }}
         loading="lazy"
+        referrerPolicy="no-referrer"
       />
     </div>
   );
@@ -140,9 +175,12 @@ function MarqueeRow({
 interface ContactProps {
   heading?: string;
   description?: string;
+  brands?: ServiceBrandListItem[];
 }
 
-export default function Contact({ heading, description }: ContactProps) {
+export default function Contact({ heading, description, brands }: ContactProps) {
+  // Convert brands to items format, fallback to hardcoded logos if no brands provided
+  const logoItems = convertBrandsToItems(brands);
   return (
     <section className="w-full lg:py-[64px] md:py-[48px] py-[32px]">
       <div className="flex w-full flex-col gap-8">
@@ -177,7 +215,7 @@ export default function Contact({ heading, description }: ContactProps) {
         </div>
 
         {/* Logo marquee */}
-        <MarqueeRow items={LOGOS} dir={1} speed={100} />
+        <MarqueeRow items={logoItems} dir={1} speed={100} />
 
       </div>
     </section>

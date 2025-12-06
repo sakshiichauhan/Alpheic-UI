@@ -11,7 +11,7 @@ interface WhitepapersProps {
 
 // Helper function to construct image URL from API path
 const getImageUrl = (imagePath?: string): string => {
-  if (!imagePath) return teamImage;
+  if (!imagePath) return '';
   
   // If it's already a full URL, return as-is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -23,12 +23,12 @@ const getImageUrl = (imagePath?: string): string => {
   if (imagePath.startsWith('/files/')) {
     // Use relative path - works if proxy is set up or files are on same domain
     // Can be extended later to use full URL if needed
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const apiBaseUrl = 'https://work.alpheric.com';
     return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
   }
   
   // Fallback to default image if path is invalid
-  return teamImage;
+  return '';
 };
 
 const Whitepapers = ({ 
@@ -65,6 +65,7 @@ const Whitepapers = ({
                 src={imageUrl}
                 alt={title || "Professional team collaborating at a modern workspace"}
                 className={`absolute inset-0 w-full h-full ${isDefaultImage ? 'object-cover' : 'object-contain'}`}
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   // Fallback to default image if image fails to load
                   const target = e.target as HTMLImageElement;

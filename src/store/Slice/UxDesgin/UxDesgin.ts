@@ -33,6 +33,42 @@ export interface FAQItem {
   doctype: string;
 }
 
+export interface ServiceBrandListItem {
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
+  name1?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
+  // Merged brand details from Client Brands API
+  brand_name?: string;
+  attach_logo?: string;
+}
+
+export interface DesignConsultantListItem {
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
+  name1?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
+  // Merged consultant details from Consultants API
+  attach_image?: string;
+  role?: string;
+}
+
 export interface ServicePageData {
   // Service Hero Section
   service_hero: number;
@@ -40,6 +76,7 @@ export interface ServicePageData {
   service_hero_other_name: string;
   service_hero_short_description: string;
   service_hero_description: string;
+  service_hero_bg_image?: string;
 
   // Why Choose Us Section
   why_choose_us: number;
@@ -76,6 +113,7 @@ export interface ServicePageData {
   design_consultants_heading: string;
   design_consultants_description: string;
   design_consultants_buttondata?: string;
+  design_consultants_list?: DesignConsultantListItem[];
 
   // Hire Card Section
   hire_card: number;
@@ -88,6 +126,7 @@ export interface ServicePageData {
   service_brands: number;
   service_brands_heading: string;
   service_brands_description: string;
+  service_brands_list?: ServiceBrandListItem[];
 
   // Service Insights Section
   service_insights: number;
@@ -154,7 +193,98 @@ export const fetchServicePageData = createAsyncThunk(
 
       const responseData = await response.json();
       // Handle response format: { "data": { ... } }
-      return responseData.data || responseData;
+      const pageData = responseData.data || responseData;
+
+      // Fetch brand details for each item in service_brands_list
+      if (pageData.service_brands_list && Array.isArray(pageData.service_brands_list)) {
+        const enrichedBrandsList = await Promise.all(
+          pageData.service_brands_list.map(async (brandItem: ServiceBrandListItem) => {
+            try {
+              // Fetch brand details from Client Brands API
+              const brandResponse = await fetch(
+                `/api/resource/Client Brands/${brandItem.name1 || brandItem.name}`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (brandResponse.ok) {
+                const brandData = await brandResponse.json();
+                const brandDetails = brandData.data || brandData;
+                
+                // Merge brand details into the item
+                return {
+                  ...brandItem,
+                  brand_name: brandDetails.brand_name,
+                  attach_logo: brandDetails.attach_logo,
+                };
+              } else {
+                // If brand fetch fails, return original item
+                console.warn(`Failed to fetch brand details for ${brandItem.name1 || brandItem.name}`);
+                return brandItem;
+              }
+            } catch (error) {
+              // If brand fetch fails, return original item
+              console.warn(`Error fetching brand details for ${brandItem.name1 || brandItem.name}:`, error);
+              return brandItem;
+            }
+          })
+        );
+
+        // Update pageData with enriched brands list
+        pageData.service_brands_list = enrichedBrandsList;
+      }
+
+      // Fetch consultant details for each item in design_consultants_list
+      if (pageData.design_consultants_list && Array.isArray(pageData.design_consultants_list)) {
+        const enrichedConsultantsList = await Promise.all(
+          pageData.design_consultants_list.map(async (consultantItem: DesignConsultantListItem) => {
+            try {
+              // Fetch consultant details from Consultants API
+              const consultantResponse = await fetch(
+                `/api/resource/Consultants/${consultantItem.name1 || consultantItem.name}`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (consultantResponse.ok) {
+                const consultantData = await consultantResponse.json();
+                const consultantDetails = consultantData.data || consultantData;
+                
+                // Merge consultant details into the item
+                return {
+                  ...consultantItem,
+                  attach_image: consultantDetails.attach_image,
+                  role: consultantDetails.role,
+                  name1: consultantDetails.name1 || consultantItem.name1,
+                };
+              } else {
+                // If consultant fetch fails, return original item
+                console.warn(`Failed to fetch consultant details for ${consultantItem.name1 || consultantItem.name}`);
+                return consultantItem;
+              }
+            } catch (error) {
+              // If consultant fetch fails, return original item
+              console.warn(`Error fetching consultant details for ${consultantItem.name1 || consultantItem.name}:`, error);
+              return consultantItem;
+            }
+          })
+        );
+
+        // Update pageData with enriched consultants list
+        pageData.design_consultants_list = enrichedConsultantsList;
+      }
+
+      return pageData;
     } catch (error) {
       // Provide more specific error messages
       if (error instanceof TypeError && error.message === 'Failed to fetch') {

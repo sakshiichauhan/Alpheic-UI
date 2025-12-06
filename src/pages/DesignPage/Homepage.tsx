@@ -1,4 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import Spiral from "@/assets/Homepage/spiral.png"; 
 
 type Props = {
@@ -13,15 +17,36 @@ type Props = {
 };
 
 const DesignHeroSection: React.FC<Props> = ({
-  title = "Make it clear. Usable. Loved.",
-  kicker = "Design by Alpheric",
-  description = `We design experiences that connect people with brands — digital, physical, and three-dimensional. Every element has a job. Clarity comes first.`,
-  ctaPrimaryText = "Explore Dreamer pilots",
-  ctaPrimaryLink = "/Pilot",
-  ctaSecondaryText = "Talk to a Strategist",
-  ctaSecondaryLink = "/LetsTalk",
+  title: defaultTitle = "Make it clear. Usable. Loved.",
+  kicker: defaultKicker = "Design by Alpheric",
+  description: defaultDescription = `We design experiences that connect people with brands — digital, physical, and three-dimensional. Every element has a job. Clarity comes first.`,
+  ctaPrimaryText: defaultCtaPrimaryText = "Explore Dreamer pilots",
+  ctaPrimaryLink: defaultCtaPrimaryLink = "/Pilot",
+  ctaSecondaryText: defaultCtaSecondaryText = "Talk to a Strategist",
+  ctaSecondaryLink: defaultCtaSecondaryLink = "/LetsTalk",
   className = "",
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    dispatch(fetchDesignPageL2Data());
+  }, [dispatch]);
+
+  // Conditionally render based on service_category
+  const shouldShowSection = data?.service_category === 1;
+
+  // Use API data if available, otherwise use props/defaults
+  const kicker = data?.service_category_smalltitle || defaultKicker;
+  const description = data?.service_category_description || defaultDescription;
+  const ctaPrimaryText = data?.service_category_button1 || defaultCtaPrimaryText;
+  const ctaSecondaryText = data?.service_category_button2 || defaultCtaSecondaryText;
+
+  // Don't render if service_category is 0
+  if (!shouldShowSection) {
+    return null;
+  }
+
   return (
     <section
       className={`w-full relative ${className} bg-[radial-gradient(ellipse_70%_120%_at_right_top,#EDE6FE_20%,#FFFFFF_70%)] overflow-clip`}
@@ -40,7 +65,14 @@ const DesignHeroSection: React.FC<Props> = ({
               id="hero-heading"
               className="2xl:text-[84px] xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[42px] text-[40px] font-semibold text-black text-left"
             >
-              {title}
+              {data?.service_category_heading ? (
+                <ParsedHtml 
+                  htmlContent={data.service_category_heading} 
+                  as="span"
+                />
+              ) : (
+                defaultTitle
+              )}
             </h1>
 
 
@@ -52,13 +84,13 @@ const DesignHeroSection: React.FC<Props> = ({
 
             <div className="flex flex-row gap-4">
               <a
-                href={ctaPrimaryLink}
+                href={defaultCtaPrimaryLink}
                 className="bg-black text-white 2xl:px-[34px] xl:px-[28px] lg:px-[24px] md:px-[20px] sm:px-[16px] px-[12px] 2xl:py-[14px] xl:py-[12px] py-[10px] 2xl:text-[24px] xl:text-base text-sm font-medium hover:bg-gray-800 transition-colors"
               >
                 {ctaPrimaryText}
               </a>
               <a
-                href={ctaSecondaryLink}
+                href={defaultCtaSecondaryLink}
                 className="bg-white text-black border border-black 2xl:px-[34px] xl:px-[28px] lg:px-[24px] md:px-[20px] sm:px-[16px] px-[12px] 2xl:py-[14px] xl:py-[12px] py-[10px] 2xl:text-[24px] xl:text-base text-sm font-medium hover:bg-gray-100 transition-colors"
               >
                 {ctaSecondaryText}

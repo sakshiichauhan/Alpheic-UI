@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store';
+import { fetchDesignPageL2Data } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import ServiceCard from '@/Components/ServiceCard';
 
 const designServices = [
@@ -33,19 +36,34 @@ const designServices = [
 ];
 
 const DesignSection: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    // Fetch design page L2 data on component mount
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Use API data if available, otherwise use defaults
+  const title = data?.service_category_card_title || 'Design';
+  const subtitle = data?.service_category_card_subtitle || 'Where creativity meets purpose.';
+  const description = data?.service_category_card_description || 'We craft experiences that connect visually, functionally, and emotionally, bringing your brand to life.';
+
   return (
     <section className="bg-white 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px]">
       <div className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
         
         <div className="text-center">
           <h2 className="xl:text-[72px] lg:text-[64px] md:text-[52px] sm:text-[40px] text-[32px] font-bold tracking-tight text-black">
-            Design
+            {title}
           </h2>
           <p className="mt-[18px] xl:text-[40px] lg:text-[32px] md:text-[28px] sm:text-[24px] text-[20px] text-black font-semibold">
-            Where creativity meets purpose.
+            {subtitle}
           </p>
           <p className="mx-auto mt-[16px] max-w-3xl xl:text-[24px] lg:text-[20px] md:text-[18px] sm:text-[16px] text-[14px] leading-8 text-[var(--medium-text)] font-urbanist">
-            We craft experiences that connect visually, functionally, and emotionally, bringing your brand to life.
+            {description}
           </p>
         </div>
 

@@ -1,4 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store';
+import { fetchDesignPageL2Data } from '@/store/Slice/UxDesgin/DesginPageThunk';
+import { ParsedHtml } from '@/Components/ParsedHtml';
+
+// Helper function to construct image URL from API path
+const getImageUrl = (imagePath?: string): string => {
+  if (!imagePath) return '';
+  
+  // If it's already a full URL, return as-is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it starts with /files/, construct full URL
+  if (imagePath.startsWith('/files/')) {
+    const apiBaseUrl = 'https://work.alpheric.com';
+    return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
+  }
+  
+  // Fallback to empty string if path is invalid
+  return '';
+};
 import Figma from '@/assets/Tools/Design1.png';
 import AdobeXD from '@/assets/Tools/Design2.png';
 import Illustrator from '@/assets/Tools/Design3.png';
@@ -83,15 +106,69 @@ const ALL_TOOLS: Tool[] = [
   { id: 32, name: 'Zeroheight', category: 'Collaboration And Delivery', iconSrc: Collaboration8 },
 ];
 
-// List of all unique categories, plus 'All'
-const CATEGORIES = [
+// List of all unique categories, plus 'All' (fallback when no API data)
+const DEFAULT_CATEGORIES = [
   'All',
   'Design And Prototype',
   '3D And Visualization',
   'AI And Motion',
   'Testing And Research',
   'Collaboration And Delivery',
-];
+] as const;
+
+// Helper function to map tool name to icon
+const getToolIcon = (toolName: string): string => {
+  const toolNameLower = toolName.toLowerCase();
+  const iconMap: Record<string, string> = {
+    'figma': Figma,
+    'adobe xd': AdobeXD,
+    'illustrator': Illustrator,
+    'photoshop': Photoshop,
+    'sketch': Sketch,
+    'indesign': InDesign,
+    'sketchup': Visual1,
+    'autocad': Visual2,
+    'blender': Visual3,
+    'lumion': Visual4,
+    'enscape': Visual5,
+    'v ray': Visual6,
+    'runway': Motion1,
+    'kaiber': Motion2,
+    'spline': Motion3,
+    'after effects': Motion4,
+    'midjourney': Motion5,
+    'pika': Motion6,
+    'maze': Testing1,
+    'hotjar': Testing2,
+    'google analytics': Testing3,
+    'usability': Testing4,
+    'hub': Testing5,
+    'optimal workshop': Testing6,
+    'notion': Collaboration1,
+    'jira': Collaboration2,
+    'slack': Collaboration3,
+    'github': Collaboration4,
+    'aws s3': Collaboration5,
+    'zeplin': Collaboration6,
+    'amazon s3': Collaboration7,
+    'zeroheight': Collaboration8,
+  };
+  
+  // Try exact match first
+  if (iconMap[toolNameLower]) {
+    return iconMap[toolNameLower];
+  }
+  
+  // Try partial match
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (toolNameLower.includes(key) || key.includes(toolNameLower)) {
+      return icon;
+    }
+  }
+  
+  // Default fallback icon
+  return Figma;
+};
 
 // --- Helper Component: Tool Icon Card ---
 
@@ -99,26 +176,56 @@ interface ToolCardProps {
   tool: Tool;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ tool }) => (
-  <div className="flex flex-col items-center justify-center px-4 py-6 2xl:w-[192px] xl:w-[170px] lg:w-[140px] md:w-[112px] w-[104px]">
-    {/* Tool Icon Container (for size and background) */}
-    <div className="2xl:w-[72px] 2xl:h-[72px] xl:w-[64px] xl:h-[64px] lg:w-[56px] lg:h-[56px] md:w-[48px] md:h-[48px] sm:w-[40px] sm:h-[40px] w-[32px] h-[32px] mb-[10px]">
-      <img 
-        src={tool.iconSrc} 
-        alt={`${tool.name} logo`} 
-        className="2xl:min-w-[72px] 2xl:min-h-[72px] xl:min-w-[64px] xl:min-h-[64px] lg:min-w-[56px] lg:min-h-[56px] md:min-w-[48px] md:min-h-[48px] sm:min-w-[40px] sm:min-h-[40px] w-[32px] h-[32px] object-contain" 
-      />
+const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
+  // Determine if we're using an API image (starts with http) or local fallback
+  const isApiImage = tool.iconSrc.startsWith('http://') || tool.iconSrc.startsWith('https://');
+  const fallbackIcon = getToolIcon(tool.name);
+  
+  return (
+    <div className="flex flex-col items-center justify-center px-4 py-6 2xl:w-[192px] xl:w-[170px] lg:w-[140px] md:w-[112px] w-[104px]">
+      {/* Tool Icon Container (for size and background) */}
+      <div className="2xl:w-[72px] 2xl:h-[72px] xl:w-[64px] xl:h-[64px] lg:w-[56px] lg:h-[56px] md:w-[48px] md:h-[48px] sm:w-[40px] sm:h-[40px] w-[32px] h-[32px] mb-[10px]">
+        <img 
+          src={tool.iconSrc} 
+          alt={`${tool.name} logo`} 
+          className="2xl:min-w-[72px] 2xl:min-h-[72px] xl:min-w-[64px] xl:min-h-[64px] lg:min-w-[56px] lg:min-h-[56px] md:min-w-[48px] md:min-h-[48px] sm:min-w-[40px] sm:min-h-[40px] w-[32px] h-[32px] object-contain" 
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            // Fallback to local icon if API image fails to load
+            const target = e.target as HTMLImageElement;
+            if (isApiImage && target.src !== fallbackIcon) {
+              target.src = fallbackIcon;
+            }
+          }}
+        />
+      </div>
+      <span className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[16px] text-[14px] font-urbanist text-[var(--hero-text)]">{tool.name}</span>
     </div>
-    <span className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[16px] text-[14px] font-urbanist text-[var(--hero-text)]">{tool.name}</span>
-  </div>
-);
+  );
+};
 
 // --- Main Component: ToolsSection ---
 
 const ToolsSection: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
   const [activeCategory, setActiveCategory] = useState('Design And Prototype');
   const [isOverflowing, setIsOverflowing] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Conditionally render based on tools flag
+  const shouldShowSection = data?.tools === 1;
+
+  // Use API data if available, otherwise use defaults
+  const heading = data?.tools_heading || '<div class="ql-editor read-mode"><p>Tools we <strong>use</strong></p></div>';
+  const subheading = data?.tools_subheading || 'Technology that enhances design and delivery.';
 
   useEffect(() => {
     const element = listRef.current;
@@ -147,10 +254,63 @@ const ToolsSection: React.FC = () => {
     setIsOverflowing(element.scrollWidth - element.clientWidth > 1);
   }, [activeCategory]);
 
+  // Convert tools_list to Tool format and generate categories
+  const { toolsFromAPI, categoriesFromAPI } = useMemo(() => {
+    if (!data?.tools_list || data.tools_list.length === 0) {
+      return { toolsFromAPI: null, categoriesFromAPI: null };
+    }
+
+    // Get unique categories from tools_list
+    const uniqueCategories = Array.from(
+      new Set(data.tools_list.map(item => item.tab_name).filter((name): name is string => Boolean(name)))
+    ).sort();
+
+    // Convert tools_list items to Tool format
+    const convertedTools: Tool[] = data.tools_list
+      .filter(item => item.tool && item.tab_name)
+      .map((item, index) => {
+        // Use API logo_image if available, otherwise fallback to getToolIcon
+        const apiImageUrl = item.logo_image ? getImageUrl(item.logo_image) : '';
+        const fallbackIcon = getToolIcon(item.tool || '');
+        
+        return {
+          id: index + 1,
+          name: item.logo_name || item.tool || '',
+          category: item.tab_name || 'Other',
+          iconSrc: apiImageUrl || fallbackIcon,
+        };
+      });
+
+    return {
+      toolsFromAPI: convertedTools,
+      categoriesFromAPI: ['All', ...uniqueCategories],
+    };
+  }, [data?.tools_list]);
+
+  // Use API data if available, otherwise use defaults
+  const categories = categoriesFromAPI || [...DEFAULT_CATEGORIES];
+  const allTools = toolsFromAPI || ALL_TOOLS;
+
+  // Set initial active category based on available data
+  useEffect(() => {
+    if (categoriesFromAPI && categoriesFromAPI.length > 1 && activeCategory === 'Design And Prototype') {
+      // Set to first non-"All" category from API, or keep default
+      const firstCategory = categoriesFromAPI.find(cat => cat !== 'All');
+      if (firstCategory) {
+        setActiveCategory(firstCategory);
+      }
+    }
+  }, [categoriesFromAPI]);
+
   // Filter tools based on the active category
-  const filteredTools = ALL_TOOLS.filter(tool => 
+  const filteredTools = allTools.filter(tool => 
     activeCategory === 'All' || tool.category === activeCategory
   );
+
+  // Don't render if tools is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
 
   return (
     <section className="2xl:py-[84px] xl:py-[72px] py-[64px] bg-white px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
@@ -158,11 +318,19 @@ const ToolsSection: React.FC = () => {
         
         {/* --- Header --- */}
         <div className="flex flex-col items-center xl:gap-[16px] lg:gap-[12px] md:gap-[8px] sm:gap-[6px] gap-[4px]">
-        <h2 className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[40px] sm:text-[38px] text-[32px] font-semibold text-black">
-          Tools we use
-        </h2>
+        {heading ? (
+          <ParsedHtml
+            htmlContent={heading}
+            as="h2"
+            className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[40px] sm:text-[38px] text-[32px] font-semibold text-black"
+          />
+        ) : (
+          <h2 className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[40px] sm:text-[38px] text-[32px] font-semibold text-black">
+            Tools we use
+          </h2>
+        )}
         <p className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[16px] sm:text-[14px] text-[12px] font-urbanist text-[var(--medium-text)]">
-          Technology that enhances design and delivery.
+          {subheading}
         </p>
         </div>
         {/* --- Category Tabs (Navigation) --- */}
@@ -175,7 +343,7 @@ const ToolsSection: React.FC = () => {
                 : 'justify-center '
             }`}
           >
-            {CATEGORIES.map(category => (
+            {categories.filter((cat): cat is string => Boolean(cat)).map((category: string) => (
               <li key={category} className="cursor-pointer relative">
                 <button
                   onClick={() => setActiveCategory(category)}

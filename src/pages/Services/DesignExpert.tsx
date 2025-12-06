@@ -1,4 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchDesignPageL2Data, type ConsultantsListItem } from "@/store/Slice/UxDesgin/DesginPageThunk";
 import { ArrowUpRight } from "lucide-react";
 import Img1 from "@/assets/ServicePage/DesginExpert/Img1.png";
 import Img2 from "@/assets/ServicePage/DesginExpert/Img2.png";
@@ -8,6 +11,7 @@ import Img5 from "@/assets/ServicePage/DesginExpert/Img5.png";
 import Img6 from "@/assets/ServicePage/DesginExpert/Img6.png";
 import Img7 from "@/assets/ServicePage/DesginExpert/Img7.png";
 import ParsedHtml from "@/Components/ParsedHtml";
+import type { DesignConsultantListItem } from "@/store/Slice/UxDesgin/UxDesgin";
 
 interface ExpertImage {
   src: string;
@@ -21,24 +25,95 @@ interface DesignExpertProps {
   heading?: string;
   description?: string;
   buttonData?: string;
+  consultants?: DesignConsultantListItem[];
 }
+
+// Helper function to construct image URL from API path
+const getImageUrl = (imagePath?: string): string => {
+  if (!imagePath) return '';
+  
+  // If it's already a full URL, return as-is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it starts with /files/, construct full URL
+  if (imagePath.startsWith('/files/')) {
+    const apiBaseUrl = 'https://work.alpheric.com';
+    return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
+  }
+  
+  // Fallback to empty string if path is invalid
+  return '';
+};
+
+// Helper function to convert consultants list to ExpertImage[] format
+const convertConsultantsToExperts = (
+  consultants?: DesignConsultantListItem[] | ConsultantsListItem[]
+): ExpertImage[] => {
+  if (!consultants || consultants.length === 0) {
+    // Fallback to hardcoded experts
+    return [
+      { src: Img1, name: "Amit Sharma", title: "UX Strategist" },
+      { src: Img2, name: "Vikram Singh", title: "Product Designer", isHighlighted: true }, 
+      { src: Img3, name: "Neha Kapoor", title: "Design Researcher" },
+      { src: Img4, name: "Arjun Mehta", title: "Creative Lead" },
+      { src: Img5, name: "Riya Das", title: "UI Designer" },
+      { src: Img6, name: "Sandeep Rao", title: "Brand Designer" },
+      { src: Img7, name: "Ishita Verma", title: "Product Strategist" },
+      { src: Img1, name: "Karan Patel", title: "Visual Designer" },
+    ];
+  }
+
+  return consultants
+    .filter((consultant) => {
+      // For ConsultantsListItem, check if attach_image exists
+      // For DesignConsultantListItem, also check attach_image
+      return 'attach_image' in consultant ? consultant.attach_image : true;
+    })
+    .map((consultant, index) => {
+      const consultantItem = consultant as ConsultantsListItem | DesignConsultantListItem;
+      return {
+        src: consultantItem.attach_image 
+          ? getImageUrl(consultantItem.attach_image)
+          : (index < 7 ? [Img1, Img2, Img3, Img4, Img5, Img6, Img7][index] : Img1),
+        name: consultantItem.name1 || consultantItem.name || `Consultant ${index + 1}`,
+        title: consultantItem.role || 'Design Expert',
+        isHighlighted: index === 0, // Highlight first consultant by default
+      };
+    });
+};
 
 const DesignExpert: React.FC<DesignExpertProps> = ({ 
   className = "",
-  heading,
-  description,
-  buttonData
+  heading: propHeading,
+  description: propDescription,
+  buttonData: propButtonData,
+  consultants: propConsultants
 }) => {
-  const experts: ExpertImage[] = [
-    { src: Img1, name: "Amit Sharma", title: "UX Strategist" },
-    { src: Img2, name: "Vikram Singh", title: "Product Designer", isHighlighted: true }, 
-    { src: Img3, name: "Neha Kapoor", title: "Design Researcher" },
-    { src: Img4, name: "Arjun Mehta", title: "Creative Lead" },
-    { src: Img5, name: "Riya Das", title: "UI Designer" },
-    { src: Img6, name: "Sandeep Rao", title: "Brand Designer" },
-    { src: Img7, name: "Ishita Verma", title: "Product Strategist" },
-    { src: Img1, name: "Karan Patel", title: "Visual Designer" },
-  ];
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Conditionally render based on consultants flag
+  const shouldShowSection = data?.consultants === 1;
+
+  // Use API data if available, otherwise use props, then defaults
+  const heading = data?.consultants_heading || propHeading;
+  const description = data?.consultants_subheading || propDescription;
+  const buttonData = data?.consultants_buttondata || propButtonData;
+  
+  // Use consultants_list from API if available, otherwise use props
+  const consultants = data?.consultants_list || propConsultants;
+
+  // Convert consultants to experts format, fallback to hardcoded experts if no consultants provided
+  const experts = useMemo(() => convertConsultantsToExperts(consultants), [consultants]);
 
   const defaultHighlightIndex = useMemo(() => {
     const presetIndex = experts.findIndex(expert => expert.isHighlighted);
@@ -51,6 +126,11 @@ const DesignExpert: React.FC<DesignExpertProps> = ({
     if (index === highlightedIndex) return;
     setHighlightedIndex(index);
   };
+
+  // Don't render if consultants is 0 (only if data exists)
+  if (data && !shouldShowSection) {
+    return null;
+  }
 
   return (
     <section
@@ -111,6 +191,7 @@ const DesignExpert: React.FC<DesignExpertProps> = ({
                     src={expert.src}
                     alt={expert.name || `Design Expert ${index + 1}`}
                     className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
                   />
 
                   {(expert.name || expert.title) && (
