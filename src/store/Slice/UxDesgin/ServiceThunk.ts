@@ -2,24 +2,21 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../../rootReducer';
 
 // API Response Types
-export interface SelectServiceCategoryItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
-  select?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
-  // Merged fields from ServicePage L2 API
+export interface LinkServiceNameItem {
+  name1?: string;
+  // Merged fields from ServicePage L3 API
   service_category_heading?: string;
   service_category_description?: string;
-  link_service_heading?: string;
-  link_service_description?: string;
+}
+
+export interface SelectServiceCategoryItem {
+
+  select?: string;
+  // Merged fields from ServicePage L2 API
+  service_category_card_title?: string;
+  service_category_card_subtitle?: string;
+  service_category_card_description?: string;
+  link_service_names?: LinkServiceNameItem[];
 }
 
 export interface ServicePageL1Data {
@@ -99,13 +96,59 @@ export const fetchServicePageL1Data = createAsyncThunk(
                 const serviceData = await serviceResponse.json();
                 const serviceDetails = serviceData.data || serviceData;
                 
+                // Fetch link_service_names from L2 and enrich with L3 data
+                let enrichedLinkServiceNames: LinkServiceNameItem[] = [];
+                if (serviceDetails.link_service_names && Array.isArray(serviceDetails.link_service_names)) {
+                  enrichedLinkServiceNames = await Promise.all(
+                    serviceDetails.link_service_names.map(async (linkItem: LinkServiceNameItem) => {
+                      try {
+                        // Fetch ServicePage L3 details using name1 as the identifier
+                        const serviceNameL3 = linkItem.name1 || linkItem.name1;
+                        if (!serviceNameL3) {
+                          console.warn('No name1 or name found for link_service_names item');
+                          return linkItem;
+                        }
+
+                        const serviceL3Response = await fetch(
+                          `/api/resource/ServicePage L3/${encodeURIComponent(serviceNameL3)}`,
+                          {
+                            method: 'GET',
+                            headers: {
+                              'Authorization': `token ${token}`,
+                              'Content-Type': 'application/json',
+                            },
+                          }
+                        );
+
+                        if (serviceL3Response.ok) {
+                          const serviceL3Data = await serviceL3Response.json();
+                          const serviceL3Details = serviceL3Data.data || serviceL3Data;
+                          
+                          // Merge ServicePage L3 details into the item
+                          return {
+                            ...linkItem,
+                            service_category_heading: serviceL3Details.service_category_heading,
+                            service_category_description: serviceL3Details.service_category_description,
+                          };
+                        } else {
+                          console.warn(`Failed to fetch ServicePage L3 details for ${serviceNameL3}`);
+                          return linkItem;
+                        }
+                      } catch (error) {
+                        console.warn(`Error fetching ServicePage L3 details for ${linkItem.name1 || linkItem.name1}:`, error);
+                        return linkItem;
+                      }
+                    })
+                  );
+                }
+                
                 // Merge ServicePage L2 details into the item
                 return {
                   ...categoryItem,
-                  service_category_heading: serviceDetails.service_category_heading,
-                  service_category_description: serviceDetails.service_category_description,
-                  link_service_heading: serviceDetails.link_service_heading,
-                  link_service_description: serviceDetails.link_service_description,
+                  service_category_card_title: serviceDetails.service_category_card_title,
+                  service_category_card_subtitle: serviceDetails.service_category_card_subtitle,
+                  service_category_card_description: serviceDetails.service_category_card_description,
+                  link_service_names: enrichedLinkServiceNames,
                 };
               } else {
                 // If ServicePage L2 fetch fails, return original item
