@@ -133,13 +133,13 @@ const HomePage: React.FC = () => {
 
             {/* ✅ Floating Video Panel */}
             {isPanelVisible && (
-              <div className="lg:block hidden fixed bottom-12 md:bottom-[50px] md:right-[50px] bg-slate-900 text-white h-[280px] sm:h-[350px] md:h-[280px] w-[180px] sm:w-[200px] md:w-[158px] z-50">
-                <div className="relative">
+              <div className="lg:block hidden fixed bottom-12 md:bottom-[50px] md:right-[50px] bg-slate-900 text-white w-[180px] sm:w-[200px] md:w-[158px] aspect-[9/16]">
+                <div className="relative w-full h-full">
                   <video
                     ref={videoRef}
                     src={Video}
                     poster={img}
-                    className="w-full object-cover"
+                    className="w-full h-full object-cover"
                     autoPlay
                     playsInline
                     muted

@@ -1,91 +1,109 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
-
-import project1 from "@/assets/OurProjects/p1.png";
-import project1s from "@/assets/OurProjects/p1s.png";
-import project2 from "@/assets/OurProjects/p2.png";
-import project2s from "@/assets/OurProjects/p2s.png";
-import project3 from "@/assets/OurProjects/p3.png";
-import project3s from "@/assets/OurProjects/p3s.png";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/rootReducer";
+import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { ArrowUpRight } from "lucide-react";
 
-type CaseStudyProps = {
-  title: string;
-  subHeading?: string;
-  description: string;
-  deliverables: string[];
-  industry: string;
-  duration: string;
-  platform: string;
-  images: string[];
-  ctaLink?: string;
+// Helper function to generate slug from case study name (same as OurProjects)
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 };
 
-const caseStudies: Record<string, CaseStudyProps> = {
-  crickslab: {
-    title: "CricksLab – Smarter Cricket UX",
-    subHeading: "A complete redesign of a high-performance cricket analytics platform.",
-    description:
-      "Pentanet is a leading provider of fiber-optic, NBN and fixed wireless internet solutions for residential and business customers across Western Australia. For a brand that prides itself on innovation, technology and experience, its website needed to mirror this positioning. Pentanet were seeking a mesmeric experience that invited audiences to deeply engage with them on both a brand and product level.",
-    deliverables: ["UI/UX", "Product Design", "SaaS"],
-    industry: "Sports & Fantasy",
-    duration: "2 Months",
-    platform: "Web & Mobile App",
-    images: [
-      project1, project1s,
-      project1, project1s,
-    ],
-    ctaLink: "https://crickslab.com",
-  },
-
-  fitflow: {
-    title: "FitFlow – Actionable Health Dashboards",
-    subHeading: "Transforming biosensor data into simplified human health insights.",
-    description:
-      "FitFlow partnered with us to translate complex health data into intuitive experiences. We delivered modular dashboards, habit loops and multi-layered analytics that reduced time-to-design and improved DAU significantly.",
-    deliverables: ["Product Strategy", "UX/UI", "Design System"],
-    industry: "HealthTech",
-    duration: "10 Weeks",
-    platform: "Web & Mobile",
-    images: [
-      project2, project2s,
-      project2, project2s,
-    ],
-    ctaLink: "https://fitflow.com",
-  },
-
-  analyticspro: {
-    title: "AnalyticsPro – Workforce Efficiency",
-    subHeading: "Enterprise-grade dashboards for productivity and workforce KPIs.",
-    description:
-      "AnalyticsPro required advanced dashboards, data-heavy interfaces and modular UI blocks to scale across 15+ enterprise-level internal tools. We delivered a unified design system powering the entire ecosystem.",
-    deliverables: ["UX Audit", "Dashboard Design", "Data Visualization"],
-    industry: "Enterprise SaaS",
-    duration: "9 Weeks",
-    platform: "Web App",
-    images: [
-      project3, project3s,
-      project3, project3s,
-    ],
-    ctaLink: "https://analyticspro.com",
+// Helper function to convert API attachment path to full URL
+const getImageUrl = (attachPath: string | undefined | null): string => {
+  if (!attachPath || typeof attachPath !== 'string' || attachPath.trim() === '') {
+    return "";
   }
+  
+  const trimmedPath = attachPath.trim();
+  
+  // If it's already a full URL, return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    return trimmedPath;
+  }
+  
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith("/files/")) {
+    return `https://work.alpheric.com${trimmedPath}`;
+  }
+  
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith("/")) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
+};
+
+// Helper function to check if attachment is a video
+const isVideoFile = (attachPath: string | undefined | null): boolean => {
+  if (!attachPath || typeof attachPath !== 'string') {
+    return false;
+  }
+  
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.m4v'];
+  const lowerPath = attachPath.toLowerCase();
+  
+  return videoExtensions.some(ext => lowerPath.endsWith(ext));
 };
 
 // ---------------------------------------------------------
 // CASE STUDY SECTION
 // ---------------------------------------------------------
 
-const CaseStudySection: React.FC<CaseStudyProps> = ({
-  title,
-  subHeading,
-  description,
-  deliverables,
-  industry,
-  duration,
-  platform,
-  images,
-  ctaLink,
+const CaseStudySection: React.FC<{ caseStudyData: CaseStudyData }> = ({
+  caseStudyData,
 }) => {
+  const [videoErrors, setVideoErrors] = useState<Record<number, boolean>>({});
+
+  // Get title - prefer heading, then full_title
+  const title = caseStudyData.heading || caseStudyData.full_title;
+  
+  // Get description - prefer description, then short_description
+  const description = caseStudyData.description || caseStudyData.short_description || '';
+  
+  // Get deliverables - split by comma if string, or use as is
+  const deliverables = caseStudyData.deliverables 
+    ? (typeof caseStudyData.deliverables === 'string' 
+        ? caseStudyData.deliverables.split(',').map(d => d.trim())
+        : Array.isArray(caseStudyData.deliverables) 
+          ? caseStudyData.deliverables 
+          : [])
+    : [];
+  
+  // Get industry, duration, platform
+  const industry = caseStudyData.industry || '';
+  const duration = caseStudyData.duration || '';
+  const platform = caseStudyData.main_platform || 
+    (caseStudyData.platform_tags && caseStudyData.platform_tags.length > 0
+      ? caseStudyData.platform_tags.map(tag => tag.pl_name).join(', ')
+      : '');
+  
+  // Get link
+  const ctaLink = caseStudyData.link;
+  
+  // Process attachments - filter out videos and get image URLs (only actual images, no padding)
+  const images = (caseStudyData.attachments || [])
+    .filter(att => att.attach && !isVideoFile(att.attach))
+    .map(att => getImageUrl(att.attach))
+    .filter(url => url !== ''); // Remove empty URLs
+  
+  // Get video attachments
+  const videoAttachments = (caseStudyData.attachments || [])
+    .filter(att => att.attach && isVideoFile(att.attach))
+    .map(att => ({
+      url: getImageUrl(att.attach),
+      idx: att.idx,
+    }));
+
+  const handleVideoError = (idx: number) => {
+    setVideoErrors(prev => ({ ...prev, [idx]: true }));
+  };
   return (
     <section  id="case-study-title" className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
 
@@ -163,51 +181,187 @@ const CaseStudySection: React.FC<CaseStudyProps> = ({
           </div>
 
           
-          {/* SUB HEADING */}
-          <div className="space-y-4">
-          <h2 className="2xl:text-[32px] xl:text-[28px] lg:text-[24px] md:text-[20px] sm:text-[16px] text-[14px] text-[var(--hero-text)] font-medium leading-snug">
-            {subHeading}
-          </h2>
-
           {/* DESCRIPTION */}
+          <div className="space-y-4">
           <p className="md:text-[16px] lg:text-[20px] text-[14px] font-medium text-[var(--medium-text)] font-urbanist">
             {description}
           </p>
-
           </div>
           
         </div>
 
-        {/* RIGHT SIDE — IMAGE LAYOUT */}
+        {/* RIGHT SIDE — IMAGE/VIDEO LAYOUT */}
         <div className="space-y-8">
-
-          {/* TOP WIDE IMAGE */}
-          <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
-            <img
-              src={images[0]}
-              className="w-full h-full object-cover"
-              alt="main"
-            />
-          </div>
-
-          {/* 2 IMAGES SIDE BY SIDE */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
-              <img src={images[1]} className="w-full h-full object-cover" />
+          {/* Render videos first if available */}
+          {videoAttachments.length > 0 && !videoErrors[videoAttachments[0].idx] && (
+            <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+              <video
+                src={videoAttachments[0].url}
+                className="w-full h-full object-cover"
+                controls
+                playsInline
+                muted
+                loop
+                onError={() => handleVideoError(videoAttachments[0].idx)}
+              />
             </div>
-            <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
-              <img src={images[2]} className="w-full h-full object-cover" />
-            </div>
-          </div>
+          )}
 
-          {/* COLLAGE 3×2 */}
-          <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
-            <img
-              src={images[3]}
-              className="w-full h-full object-cover"
-              alt="main"
-            />
-          </div>
+          {/* Dynamic image layout based on count */}
+          {images.length === 1 && (
+            // 1 image → large
+            <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+              <img
+                src={images[0]}
+                className="w-full h-full object-cover"
+                alt="main"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
+
+          {images.length === 2 && (
+            // 2 images → first large, second large in next row
+            <>
+              <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                <img
+                  src={images[0]}
+                  className="w-full h-full object-cover"
+                  alt="image-1"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                <img
+                  src={images[1]}
+                  className="w-full h-full object-cover"
+                  alt="image-2"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </>
+          )}
+
+          {images.length === 3 && (
+            // 3 images → first large, second & third small on same row
+            <>
+              <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                <img
+                  src={images[0]}
+                  className="w-full h-full object-cover"
+                  alt="image-1"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                  <img
+                    src={images[1]}
+                    className="w-full h-full object-cover"
+                    alt="image-2"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                  <img
+                    src={images[2]}
+                    className="w-full h-full object-cover"
+                    alt="image-3"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {images.length >= 4 && (
+            // 4+ images → pattern: large, then 2 small, then large, then 2 small, etc.
+            <>
+              {/* First large image */}
+              <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                <img
+                  src={images[0]}
+                  className="w-full h-full object-cover"
+                  alt="image-1"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              
+              {/* Remaining images in groups: 2 small, 1 large, 2 small, 1 large, etc. */}
+              {Array.from({ length: Math.ceil((images.length - 1) / 3) }).map((_, groupIndex) => {
+                const startIdx = 1 + groupIndex * 3;
+                const groupImages = images.slice(startIdx, startIdx + 3);
+                
+                if (groupImages.length === 1) {
+                  // Single large image
+                  return (
+                    <div key={groupIndex} className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                      <img
+                        src={groupImages[0]}
+                        className="w-full h-full object-cover"
+                        alt={`image-${startIdx + 1}`}
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  );
+                } else if (groupImages.length === 2) {
+                  // Two small images
+                  return (
+                    <div key={groupIndex} className="grid grid-cols-2 gap-4">
+                      <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                        <img
+                          src={groupImages[0]}
+                          className="w-full h-full object-cover"
+                          alt={`image-${startIdx + 1}`}
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                        <img
+                          src={groupImages[1]}
+                          className="w-full h-full object-cover"
+                          alt={`image-${startIdx + 2}`}
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // Three images: first large, next two small
+                  return (
+                    <div key={groupIndex} className="space-y-4">
+                      <div className="w-full h-[320px] md:h-[360px] lg:h-[400px] xl:h-[450px] 2xl:h-[504px] overflow-hidden">
+                        <img
+                          src={groupImages[0]}
+                          className="w-full h-full object-cover"
+                          alt={`image-${startIdx + 1}`}
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                          <img
+                            src={groupImages[1]}
+                            className="w-full h-full object-cover"
+                            alt={`image-${startIdx + 2}`}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div className="h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] 2xl:h-[245px] overflow-hidden">
+                          <img
+                            src={groupImages[2]}
+                            className="w-full h-full object-cover"
+                            alt={`image-${startIdx + 3}`}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -222,7 +376,12 @@ const CaseStudySection: React.FC<CaseStudyProps> = ({
 const CaseStudyPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
-  const data = slug ? caseStudies[slug] : undefined;
+  const { caseStudies, loading, error } = useSelector((state: RootState) => state.caseStudy);
+
+  // Find case study by slug (match by name after converting to slug)
+  const caseStudyData = Object.values(caseStudies).find(
+    (cs) => generateSlug(cs.name) === slug
+  );
 
   // Scroll to title when navigating from OurProjects
   useEffect(() => {
@@ -241,7 +400,29 @@ const CaseStudyPage: React.FC = () => {
     }
   }, [location.state]);
 
-  if (!data) {
+  if (loading) {
+    return (
+      <section className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] text-center">
+        <p className="text-[var(--medium-text)]">Loading case study...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] text-center">
+        <p className="text-red-500">Error loading case study: {error}</p>
+        <Link
+          to="/"
+          className="inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-sm hover:bg-neutral-800 transition mt-4"
+        >
+          Back to Home
+        </Link>
+      </section>
+    );
+  }
+
+  if (!caseStudyData) {
     return (
       <section className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]
   text-center">
@@ -261,7 +442,7 @@ const CaseStudyPage: React.FC = () => {
     );
   }
 
-  return <CaseStudySection {...data} />;
+  return <CaseStudySection caseStudyData={caseStudyData} />;
 };
 
 export default CaseStudyPage;

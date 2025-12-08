@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { MoveRight, VolumeOff, Volume2, Play, Pause, RotateCcw } from "lucide-react";
+import ContactModal from "@/Components/PopUp/ContactModal";
 
 import vid from "@/assets/Video/vid2.mp4";
 
@@ -12,6 +13,10 @@ const Design: React.FC = () => {
   const mobileSectionRef = useRef<HTMLElement | null>(null);
   const [mobileMuted, setMobileMuted] = useState(true);
   const [mobileIsPlaying, setMobileIsPlaying] = useState(false);
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasShownModal, setHasShownModal] = useState(false);
 
   // Intersection Observer for mobile video
   useEffect(() => {
@@ -205,6 +210,41 @@ const Design: React.FC = () => {
     setIsMuted(v.muted);
   };
 
+  // Modal scroll detection - triggers after Design section is scrolled past
+  useEffect(() => {
+    // Use desktop section ref for detection (or mobile if desktop doesn't exist)
+    const targetSection = sectionRef.current || mobileSectionRef.current;
+    if (!targetSection || hasShownModal) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // When Design section has been scrolled past (exits viewport from top)
+          if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+            if (!hasShownModal) {
+              setIsModalOpen(true);
+              setHasShownModal(true);
+            }
+          }
+        });
+      },
+      {
+        threshold: 0,
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(targetSection);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasShownModal]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <>
       {/* ---------- STATIC BELOW LG ---------- */}
@@ -355,6 +395,9 @@ const Design: React.FC = () => {
         </div>
         {/* After sticky finishes, normal scrolling resumes with no further scaling */}
       </section>
+      
+      {/* Contact Modal - shows after scrolling past Design section */}
+      <ContactModal isOpen={isModalOpen} onClose={handleCloseModal} />
     </>
   );
 };

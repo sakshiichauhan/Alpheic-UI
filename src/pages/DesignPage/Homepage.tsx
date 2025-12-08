@@ -27,11 +27,42 @@ const DesignHeroSection: React.FC<Props> = ({
   className = "",
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { data } = useSelector((state: RootState) => state.designPageL2);
+  const { data, loading, error } = useSelector((state: RootState) => state.designPageL2);
 
   useEffect(() => {
-    dispatch(fetchDesignPageL2Data());
-  }, [dispatch]);
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading page data: {error}</p>
+          <button
+            onClick={() => dispatch(fetchDesignPageL2Data())}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Conditionally render based on service_category
   const shouldShowSection = data?.service_category === 1;

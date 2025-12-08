@@ -6,7 +6,7 @@ import { ParsedHtml } from '@/Components/ParsedHtml';
 
 const HeroSection: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { data, loading } = useSelector((state: RootState) => state.servicePageL1);
+  const { data, loading, error } = useSelector((state: RootState) => state.servicePageL1);
 
   useEffect(() => {
     // Fetch service page L1 data on component mount
@@ -14,6 +14,35 @@ const HeroSection: React.FC = () => {
       dispatch(fetchServicePageL1Data());
     }
   }, [dispatch, data, loading]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading page data: {error}</p>
+          <button
+            onClick={() => dispatch(fetchServicePageL1Data())}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Use API data if available, otherwise use defaults
   const heading = data?.heading || '<div class="ql-editor read-mode"><p>Our <strong>Services</strong></p></div>';

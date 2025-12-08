@@ -1,81 +1,87 @@
 import project1 from "@/assets/OurProjects/p1.png";
 import project1_secondary from "@/assets/OurProjects/p1s.png";
-import project2 from "@/assets/OurProjects/p2.png"; 
-import project2_secondary from "@/assets/OurProjects/p2s.png";
-// import project3 from "@/assets/OurProjects/p3.png";
-// import project3_secondary from "@/assets/OurProjects/p3s.png";
-// import project4 from "@/assets/OurProjects/p4.png";
-// import project4_secondary from "@/assets/OurProjects/p4s.png";
 import { ArrowUpRight } from "lucide-react";
 import SneekPeak from "@/Components/SneekPeak";
 import { motion } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import {  useScroll, useTransform } from "framer-motion";
 import { DefaultButton } from "@/Components/Button";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import type { RootState } from "@/store/rootReducer";
 
 type Project = {
   id: string;
   title: string;            // e.g., "CricksLab – Smarter Cricket UX"
   tags: string[];           // e.g., ["Product Design", "Dashboard Design", ...]
-  heroImage: { src: string; alt: string };        // large left image
+  heroMedia: { 
+    src: string; 
+    alt: string; 
+    type: 'image' | 'video';  // media type
+  };        // large left image or video
   secondaryImage: { src: string; alt: string };   // top-right image
   summary: string;          // right-bottom description card
   bgColor: string;          // background color for summary card
   caseStudySlug?: string;   // slug for internal case-study route
+  caseStudyName?: string;   // API identifier (e.g., "CaseStudy-0014")
 };
 
-const projects: Project[] = [
-  {
-    id: "p1",
-    title: "CricksLab – Smarter Cricket UX",
-    tags: [
-      "Product Design",
-      "Dashboard Design",
-      "Mobile App",
-      "Interface Design & UX",
-      "Data Insights",
-      "Fantasy App",
-      "SaaS",
-    ],
-    heroImage: {
-      src: project1,
-      alt: "CricksLab redesigned app shown on a laptop",
-    },
-    secondaryImage: {
-      src: project1_secondary,
-      alt: "CricksLab analytics dashboard preview",
-    },
-    summary:
-      "We redesigned CricksLab from scratch, enhancing UX usability and effortless match tracking for cricket fans. Post-launch, the successful revamped app crossed 10K+ downloads and improved retention significantly.",
-    bgColor: "#D4F3EA",
-    caseStudySlug: "crickslab",
-  },
-  {
-    id: "p2",
-    title: "FitFlow – Actionable Health Dashboards",
-    tags: [
-      "Product Design",
-      "HealthTech",
-      "Mobile App",
-      "Data Visualization",
-      "SaaS",
-    ],
-    heroImage: {
-      src: project2,
-      alt: "FitFlow dashboard on laptop showing KPIs",
-    },
-    secondaryImage: {
-      src: project2_secondary,
-      alt: "FitFlow mobile screens and charts",
-    },
-    summary:
-      "Designed a modular insights layer with habits, trends, and cohort analysis. Ship-ready components reduced time-to-feature by ~35% and boosted DAU with better streak mechanics.",
-    bgColor: "#CAE4F9",
-    caseStudySlug: "fitflow",
-  },
-  // leave `id` here; more projects will be added later
-];
+// Helper function to generate slug from case study name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+// Default background colors for projects (cycling through)
+const defaultBgColors = ["#D4F3EA", "#CAE4F9", "#F4E4D4", "#E8D5E8", "#D4E8F4"];
+
+// Fallback images
+const fallbackImages = {
+  hero: project1,
+  secondary: project1_secondary,
+};
+
+// Helper function to convert API attachment path to full URL
+const getImageUrl = (attachPath: string | undefined | null): string => {
+  if (!attachPath || typeof attachPath !== 'string' || attachPath.trim() === '') {
+    return "";
+  }
+  
+  const trimmedPath = attachPath.trim();
+  
+  // If it's already a full URL, return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    return trimmedPath;
+  }
+  
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith("/files/")) {
+    return `https://work.alpheric.com${trimmedPath}`;
+  }
+  
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith("/")) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
+};
+
+// Helper function to check if attachment is a video
+const isVideoFile = (attachPath: string | undefined | null): boolean => {
+  if (!attachPath || typeof attachPath !== 'string') {
+    return false;
+  }
+  
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.m4v'];
+  const lowerPath = attachPath.toLowerCase();
+  
+  return videoExtensions.some(ext => lowerPath.endsWith(ext));
+};
 
 
 const TagChip = ({ label }: { label: string }) => (
@@ -87,6 +93,7 @@ const TagChip = ({ label }: { label: string }) => (
 
 const ProjectBlock = ({ project }: { project: Project }) => {
   const navigate = useNavigate();
+  const [videoError, setVideoError] = useState(false);
 
   const handleCaseStudyClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -96,6 +103,11 @@ const ProjectBlock = ({ project }: { project: Project }) => {
       });
     }
   };
+
+  // Reset video error when project changes
+  useEffect(() => {
+    setVideoError(false);
+  }, [project.id]);
 
   return (
     <section
@@ -129,7 +141,7 @@ const ProjectBlock = ({ project }: { project: Project }) => {
 
     {/* Content Grid */}
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:items-stretch">
-  {/* Left: hero image defines the row height, keeps original proportions */}
+  {/* Left: hero image/video defines the row height, keeps original proportions */}
   <div className="xl:col-span-2">
     {project.caseStudySlug ? (
       <Link
@@ -138,22 +150,64 @@ const ProjectBlock = ({ project }: { project: Project }) => {
         className="bg-white relative block cursor-pointer group"
         aria-label="Open case study"
       >
-        <img
-          src={project.heroImage.src}
-          alt={project.heroImage.alt}
-          className="block w-full h-auto object-contain transition-opacity group-hover:opacity-90"
-        />
+        {project.heroMedia.type === 'video' && !videoError ? (
+          <video
+            src={project.heroMedia.src}
+            className="block w-full h-auto object-contain transition-opacity group-hover:opacity-90"
+            controls
+            playsInline
+            muted
+            loop
+            onError={() => {
+              setVideoError(true);
+            }}
+          />
+        ) : (
+          <img
+            src={videoError ? fallbackImages.hero : project.heroMedia.src}
+            alt={project.heroMedia.alt}
+            className="block w-full h-auto object-contain transition-opacity group-hover:opacity-90"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== fallbackImages.hero) {
+                target.src = fallbackImages.hero;
+              }
+            }}
+          />
+        )}
         <div className="md:hidden block absolute top-2 right-2 border border-[var(--color)] bg-white text-black p-[6px] sm:p-[10px]">
           <ArrowUpRight className="h-auto w-[10px] sm:w-[18px]" />
         </div>
       </Link>
     ) : (
       <div className="bg-white relative">
-        <img
-          src={project.heroImage.src}
-          alt={project.heroImage.alt}
-          className="block w-full h-auto object-contain"
-        />
+        {project.heroMedia.type === 'video' && !videoError ? (
+          <video
+            src={project.heroMedia.src}
+            className="block w-full h-auto object-contain"
+            controls
+            playsInline
+            muted
+            loop
+            onError={() => {
+              setVideoError(true);
+            }}
+          />
+        ) : (
+          <img
+            src={videoError ? fallbackImages.hero : project.heroMedia.src}
+            alt={project.heroMedia.alt}
+            className="block w-full h-auto object-contain"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== fallbackImages.hero) {
+                target.src = fallbackImages.hero;
+              }
+            }}
+          />
+        )}
       </div>
     )}
   </div>
@@ -172,6 +226,13 @@ const ProjectBlock = ({ project }: { project: Project }) => {
           src={project.secondaryImage.src}
           alt={project.secondaryImage.alt}
           className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-90"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== fallbackImages.secondary) {
+              target.src = fallbackImages.secondary;
+            }
+          }}
         />
       </Link>
     ) : (
@@ -180,6 +241,13 @@ const ProjectBlock = ({ project }: { project: Project }) => {
           src={project.secondaryImage.src}
           alt={project.secondaryImage.alt}
           className="absolute inset-0 w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== fallbackImages.secondary) {
+              target.src = fallbackImages.secondary;
+            }
+          }}
         />
       </div>
     )}
@@ -250,7 +318,8 @@ const ProjectBlock = ({ project }: { project: Project }) => {
 
 
 export default function OurProjects() {
-  
+  const dispatch = useDispatch();
+  const { caseStudies, loading, error } = useSelector((state: RootState) => state.caseStudy);
   const heroRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -258,46 +327,138 @@ export default function OurProjects() {
     offset: ["start start", "end start"]
   });
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.5]);
-  return (
+
+  // Fetch all case studies on mount
+  useEffect(() => {
+    // Only fetch if we don't have any case studies yet
+    if (Object.keys(caseStudies).length === 0 && !loading) {
+      dispatch(fetchAllCaseStudies() as any);
+    }
+  }, [dispatch, caseStudies, loading]);
+
+  // Convert case studies from API to Project format - limit to first 4 for homepage
+  const projects = useMemo(() => {
+    const caseStudyArray = Object.values(caseStudies);
     
+    if (caseStudyArray.length === 0) {
+      return [];
+    }
+
+    // Slice to show only first 4 case studies
+    return caseStudyArray.slice(0, 4).map((caseStudyData, index) => {
+      const caseStudyName = caseStudyData.name;
+      const slug = generateSlug(caseStudyName);
+      
+      // Get background color (cycle through default colors)
+      const bgColor = defaultBgColors[index % defaultBgColors.length];
+
+      // Extract only first 2 attachments for homepage
+      const attachments = (caseStudyData.attachments || []).slice(0, 2);
+      
+      // Get hero media (image or video) - use first attachment or fallback
+      let heroMediaSrc = fallbackImages.hero;
+      let heroMediaType: 'image' | 'video' = 'image';
+      if (attachments.length > 0 && attachments[0]?.attach) {
+        const url = getImageUrl(attachments[0].attach);
+        if (url) {
+          heroMediaSrc = url;
+          heroMediaType = isVideoFile(attachments[0].attach) ? 'video' : 'image';
+        }
+      }
+      
+      // Get secondary image - use second attachment (only if it's an image), or first if only one and it's an image, or fallback
+      let secondaryImageSrc = fallbackImages.secondary;
+      if (attachments.length > 1 && attachments[1]?.attach) {
+        // Only use second attachment if it's an image (not a video)
+        if (!isVideoFile(attachments[1].attach)) {
+          const url = getImageUrl(attachments[1].attach);
+          secondaryImageSrc = url || fallbackImages.secondary;
+        }
+      } else if (attachments.length > 0 && attachments[0]?.attach) {
+        // Only use first attachment for secondary if it's an image (not a video)
+        if (!isVideoFile(attachments[0].attach)) {
+          const url = getImageUrl(attachments[0].attach);
+          secondaryImageSrc = url || fallbackImages.secondary;
+        }
+      }
+
+      // Extract tags from platform_tags
+      const tags = caseStudyData.platform_tags?.map(tag => tag.pl_name) || [];
+
+      const project: Project = {
+        id: `p${index + 1}`,
+        title: caseStudyData.full_title || caseStudyName,
+        tags: tags,
+        heroMedia: {
+          src: heroMediaSrc,
+          alt: `${caseStudyData.full_title || caseStudyName} - Main ${heroMediaType}`,
+          type: heroMediaType,
+        },
+        secondaryImage: {
+          src: secondaryImageSrc,
+          alt: `${caseStudyData.full_title || caseStudyName} - Secondary image`,
+        },
+        summary: caseStudyData.short_description || '',
+        bgColor: bgColor,
+        caseStudySlug: slug,
+        caseStudyName: caseStudyName,
+      };
+
+      return project;
+    });
+  }, [caseStudies]);
+
+  return (
     <div className="bg-gray-50 py-[32px] sm:py-[40px] md:py-[48px] lg:py-[120px]">
       <section
-  ref={heroRef}
-  className="lg:h-[80vh] pb-[24px] lg:pb-0 flex flex-col justify-center items-center"
->
-  {/* STATIC (< lg) */}
-  <div className="lg:hidden flex flex-col items-center">
-    <h1 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center font-semibold">
-      Latest Project
-    </h1>
-    <div>
-      <p className="2xl:text-[84px] xl:text-[70px] md:text-[64px] sm:text-[40px] text-[24px] text-center font-instrument-serif-italics">
-        Powerful Results. <br className="hidden md:block" /> Meaningful impact.
-      </p>
-      <p className="text-[var(--sub-text)] font-urbanist pt-2 md:pt-4 text-[14px] sm:text-[15px] md:text-[18px] lg:text-[22px] xl:text-[32px] text-center">
-      Work, for us, is Worship.
-      </p>
-    </div>
-  </div>
+        ref={heroRef}
+        className="lg:h-[80vh] pb-[24px] lg:pb-0 flex flex-col justify-center items-center"
+      >
+        {/* STATIC (< lg) */}
+        <div className="lg:hidden flex flex-col items-center">
+          <h1 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center font-semibold">
+            Latest Project
+          </h1>
+          <div>
+            <p className="2xl:text-[84px] xl:text-[70px] md:text-[64px] sm:text-[40px] text-[24px] text-center font-instrument-serif-italics">
+              Powerful Results. <br className="hidden md:block" /> Meaningful impact.
+            </p>
+            <p className="text-[var(--sub-text)] font-urbanist pt-2 md:pt-4 text-[14px] sm:text-[15px] md:text-[18px] lg:text-[22px] xl:text-[32px] text-center">
+              Work, for us, is Worship.
+            </p>
+          </div>
+        </div>
 
-  {/* ANIMATED (lg+) */}
-  <motion.div
-    style={{ scale }}
-    className="hidden lg:flex flex-col items-center will-change-transform"
-  >
-    <h1 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center font-semibold">
-      Latest Project
-    </h1>
-    <div>
-      <p className="2xl:text-[84px] xl:text-[70px] md:text-[64px] sm:text-[40px] text-[24px] text-center font-instrument-serif-italics">
-        Powerful Results. Meaningful impact.
-      </p>
-      <p className="text-[var(--sub-text)] font-urbanist pt-2 md:pt-4 text-[14px] sm:text-[15px] md:text-[18px] lg:text-[22px] xl:text-[32px] text-center">
-      Work, for us, is Worship.
-      </p>
-    </div>
-  </motion.div>
-</section>
+        {/* ANIMATED (lg+) */}
+        <motion.div
+          style={{ scale }}
+          className="hidden lg:flex flex-col items-center will-change-transform"
+        >
+          <h1 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center font-semibold">
+            Latest Project
+          </h1>
+          <div>
+            <p className="2xl:text-[84px] xl:text-[70px] md:text-[64px] sm:text-[40px] text-[24px] text-center font-instrument-serif-italics">
+              Powerful Results. Meaningful impact.
+            </p>
+            <p className="text-[var(--sub-text)] font-urbanist pt-2 md:pt-4 text-[14px] sm:text-[15px] md:text-[18px] lg:text-[22px] xl:text-[32px] text-center">
+              Work, for us, is Worship.
+            </p>
+          </div>
+        </motion.div>
+      </section>
+
+      {loading && projects.length === 0 && (
+        <div className="flex justify-center items-center py-12">
+          <p className="text-[var(--medium-text)]">Loading projects...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex justify-center items-center py-12">
+          <p className="text-red-500">Error loading projects: {error}</p>
+        </div>
+      )}
 
       {projects.map((p) => (
         <ProjectBlock key={p.id} project={p} />

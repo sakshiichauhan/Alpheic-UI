@@ -1,4 +1,3 @@
-
 import HomePage from "@/pages/Homepage/HeroSection"
 import Design from "@/pages/Homepage/Design"
 import Hire from "@/pages/Homepage/Hire"
