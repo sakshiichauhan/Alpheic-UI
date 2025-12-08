@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
-import { fetchDesignPageL2Data } from '@/store/Slice/UxDesgin/DesginPageThunk';
+import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import ServiceCard from '@/Components/ServiceCard';
 
-const designServices = [
+// Fallback services in case API data is not available
+const fallbackServices = [
   {
     title: "Logo Design",
     desc: "Creating symbols that define your identity."
@@ -51,6 +52,16 @@ const DesignSection: React.FC = () => {
   const subtitle = data?.service_category_card_subtitle || 'Where creativity meets purpose.';
   const description = data?.service_category_card_description || 'We craft experiences that connect visually, functionally, and emotionally, bringing your brand to life.';
 
+  // Get services from API data (link_service_names) or use fallback
+  const linkServiceNames = data?.link_service_names || [];
+  const services = linkServiceNames.length > 0
+    ? linkServiceNames.map((item: LinkServiceNameItem) => ({
+        id: item.name || item.name1 || '',
+        title: item.service_category_heading || item.name1 || '',
+        desc: item.service_category_description || ''
+      })).filter(service => service.title && service.desc) // Filter out items without title or description
+    : fallbackServices.map((service, i) => ({ ...service, id: `fallback-${i}` }));
+
   return (
     <section className="bg-white 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px]">
       <div className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
@@ -68,13 +79,13 @@ const DesignSection: React.FC = () => {
         </div>
 
         <div className="2xl:mt-[75px] xl:mt-[60px] lg:mt-[48px] md:mt-[40px] mt-[32px] grid grid-cols-1 lg:gap-8 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center items-center">
-          {designServices.map((service, i) => {
-            const isLast = i === designServices.length - 1;
-            const centerOnLgThreeCol = designServices.length % 3 === 1; 
+          {services.map((service, i) => {
+            const isLast = i === services.length - 1;
+            const centerOnLgThreeCol = services.length % 3 === 1; 
 
             return (
               <div
-                key={i}
+                key={service.id || i}
                 className={`${
                   isLast && centerOnLgThreeCol ? 'lg:col-start-2 lg:col-span-1' : ''
                 }`}
@@ -82,7 +93,7 @@ const DesignSection: React.FC = () => {
                 <ServiceCard
                   title={service.title}
                   description={service.desc}
-                    href="/LetsTalk"
+                  href="/LetsTalk"
                 />
               </div>
             );
