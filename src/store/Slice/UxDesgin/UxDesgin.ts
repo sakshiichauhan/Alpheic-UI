@@ -34,37 +34,14 @@ export interface FAQItem {
 }
 
 export interface ServiceBrandListItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
+  
   name1?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
-  // Merged brand details from Client Brands API
   brand_name?: string;
   attach_logo?: string;
 }
 
 export interface DesignConsultantListItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
   name1?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
-  // Merged consultant details from Consultants API
   attach_image?: string;
   role?: string;
 }
@@ -202,7 +179,7 @@ export const fetchServicePageData = createAsyncThunk(
             try {
               // Fetch brand details from Client Brands API
               const brandResponse = await fetch(
-                `/api/resource/Client Brands/${brandItem.name1 || brandItem.name}`,
+                `/api/resource/Client Brands/${brandItem.name1}`,
                 {
                   method: 'GET',
                   headers: {
@@ -224,12 +201,12 @@ export const fetchServicePageData = createAsyncThunk(
                 };
               } else {
                 // If brand fetch fails, return original item
-                console.warn(`Failed to fetch brand details for ${brandItem.name1 || brandItem.name}`);
+                console.warn(`Failed to fetch brand details for ${brandItem.name1}`);
                 return brandItem;
               }
             } catch (error) {
               // If brand fetch fails, return original item
-              console.warn(`Error fetching brand details for ${brandItem.name1 || brandItem.name}:`, error);
+              console.warn(`Error fetching brand details for ${brandItem.name1}:`, error);
               return brandItem;
             }
           })
@@ -246,7 +223,7 @@ export const fetchServicePageData = createAsyncThunk(
             try {
               // Fetch consultant details from Consultants API
               const consultantResponse = await fetch(
-                `/api/resource/Consultants/${consultantItem.name1 || consultantItem.name}`,
+                `/api/resource/Consultants/${consultantItem.name1}`,
                 {
                   method: 'GET',
                   headers: {
@@ -269,12 +246,12 @@ export const fetchServicePageData = createAsyncThunk(
                 };
               } else {
                 // If consultant fetch fails, return original item
-                console.warn(`Failed to fetch consultant details for ${consultantItem.name1 || consultantItem.name}`);
+                console.warn(`Failed to fetch consultant details for ${consultantItem.name1}`);
                 return consultantItem;
               }
             } catch (error) {
               // If consultant fetch fails, return original item
-              console.warn(`Error fetching consultant details for ${consultantItem.name1 || consultantItem.name}:`, error);
+              console.warn(`Error fetching consultant details for ${consultantItem.name1}:`, error);
               return consultantItem;
             }
           })

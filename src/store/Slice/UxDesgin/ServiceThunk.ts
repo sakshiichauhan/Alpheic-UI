@@ -12,7 +12,6 @@ export interface LinkServiceNameItem {
 export interface SelectServiceCategoryItem {
 
   select?: string;
-  // Merged fields from ServicePage L2 API
   service_category_card_title?: string;
   service_category_card_subtitle?: string;
   service_category_card_description?: string;
