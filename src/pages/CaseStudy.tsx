@@ -7,7 +7,7 @@ import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { ArrowUpRight } from "lucide-react";
 
-// Helper function to generate slug from case study name (same as OurProjects)
+
 const generateSlug = (name: string): string => {
   return name
     .toLowerCase()
@@ -64,7 +64,10 @@ const CaseStudySection: React.FC<{ caseStudyData: CaseStudyData }> = ({
   const [videoErrors, setVideoErrors] = useState<Record<number, boolean>>({});
 
   // Get title - prefer heading, then full_title
-  const title = caseStudyData.heading || caseStudyData.full_title;
+  const title =  caseStudyData.full_title;
+  
+  // Get subheading
+  const subHeading = caseStudyData.heading || '';
   
   // Get description - prefer description, then short_description
   const description = caseStudyData.description || caseStudyData.short_description || '';
@@ -185,6 +188,10 @@ const CaseStudySection: React.FC<{ caseStudyData: CaseStudyData }> = ({
           
           {/* DESCRIPTION */}
           <div className="space-y-4">
+          <h2 className="2xl:text-[32px] xl:text-[28px] lg:text-[24px] md:text-[20px] sm:text-[16px] text-[14px] text-[var(--hero-text)] font-medium leading-snug">
+            {subHeading}
+          </h2>
+
           <p className="md:text-[16px] lg:text-[20px] text-[14px] font-medium text-[var(--medium-text)] font-urbanist">
             {description}
           </p>

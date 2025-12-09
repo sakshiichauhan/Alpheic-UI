@@ -8,9 +8,7 @@ import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/U
 import { ParsedHtml } from '@/Components/ParsedHtml';
 import Amber from "@/assets/Tools/Amber.png";
 
-// Default data removed - all data comes from API
 
-// --- 1. Helper Component for List Items ---
 
 interface ServiceItemProps {
   text: string;

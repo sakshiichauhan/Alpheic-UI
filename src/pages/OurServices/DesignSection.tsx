@@ -47,7 +47,7 @@ const DesignSection: React.FC = () => {
     }
   }, [dispatch, data, loading]);
 
-  // Use API data if available, otherwise use defaults
+  // 
   const title = data?.service_category_card_title || 'Design';
   const subtitle = data?.service_category_card_subtitle || 'Where creativity meets purpose.';
   const description = data?.service_category_card_description || 'We craft experiences that connect visually, functionally, and emotionally, bringing your brand to life.';
