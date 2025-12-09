@@ -143,37 +143,17 @@ export default function Insights({ buttonData }: InsightsProps) {
       : data.insights_list;
     
     // Limit to first 3 insights (or all if less than 3)
-    return filteredInsights.slice(0, 3).map((insight, index) => {
+    return filteredInsights.slice(0, 3).map((insight) => {
       const creationDate = insight.creation ? new Date(insight.creation) : null;
       const formattedDate = creationDate
         ? creationDate.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
         : "";
-      const title = insight.title || `Insight ${index + 1}`;
-      
-      // Get the first matching tag for display, or fallback to about/tag
-      let displayTag = insight.about || "";
-      if (data?.select_insight_tags && Array.isArray(data.select_insight_tags) && insight.tags) {
-        const allowedTags = data.select_insight_tags
-          .map((item) => item.tag)
-          .filter((tag): tag is string => Boolean(tag));
-        
-        const insightTags = Array.isArray(insight.tags) ? insight.tags : [];
-        const matchingTag = insightTags
-          .map((tagItem) => {
-            if (typeof tagItem === 'string') return tagItem;
-            return tagItem?.tag || tagItem?.Tag || '';
-          })
-          .find((tag) => allowedTags.includes(tag));
-        
-        if (matchingTag) {
-          displayTag = matchingTag;
-        }
-      }
+      const title = insight.title || "";
       
       return {
         id: title,
         date: formattedDate,
-        tag: displayTag,
+        tag: insight.about || "",
         readTime: "0 min",
         title: title,
         image: getImageUrl(insight.image) || dummyImage,
