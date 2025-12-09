@@ -51,7 +51,7 @@ export interface CaseStudySlideData {
 }
 
 export interface LinkServiceNameItem {
-  name1?: string;
+  name1: string;
   // Merged fields from ServicePage L3 API
   service_category_heading?: string;
   service_category_description?: string;
@@ -61,7 +61,7 @@ export interface LinkServiceNameItem {
 }
 
 export interface ToolsListItem {
-  tab_name?: string;
+  tab_name: string;
   tool?: string;
   // Merged fields from ToolsWeUse API
   logo_image?: string;

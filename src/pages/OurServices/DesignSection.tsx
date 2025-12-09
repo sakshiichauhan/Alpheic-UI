@@ -56,7 +56,7 @@ const DesignSection: React.FC = () => {
   const linkServiceNames = data?.link_service_names || [];
   const services = linkServiceNames.length > 0
     ? linkServiceNames.map((item: LinkServiceNameItem) => ({
-        id: item.name || item.name1 || '',
+        id: item.name1 || '',
         title: item.service_category_heading || item.name1 || '',
         desc: item.service_category_description || ''
       })).filter(service => service.title && service.desc) // Filter out items without title or description
