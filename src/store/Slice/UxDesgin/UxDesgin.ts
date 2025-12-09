@@ -53,6 +53,21 @@ export interface SelectCaseStudiesByTagItem {
   name?: string;
 }
 
+export interface InsightTagItem {
+  tag?: string;
+}
+
+export interface ServiceInsightItem {
+  name?: string;
+  title?: string;
+  creation?: string;
+  image?: string;
+  about?: string;
+  tag?: string;
+  tags?: Array<{ tag?: string; Tag?: string } | string>;
+  read_time?: string;
+}
+
 export interface ServicePageData {
   // Service Hero Section
   service_hero: number;
@@ -117,6 +132,8 @@ export interface ServicePageData {
   service_insights_heading: string;
   service_insights_description: string;
   service_insights_buttondata?: string;
+  insight_tags?: InsightTagItem[];
+  insights_list?: ServiceInsightItem[];
 
   // Service Pilot Section
   service_piolet: number;
@@ -269,6 +286,127 @@ export const fetchServicePageData = createAsyncThunk(
 
         // Update pageData with enriched consultants list
         pageData.design_consultants_list = enrichedConsultantsList;
+      }
+
+      // Fetch Insights filtered by insight_tags
+      if (pageData.insight_tags && Array.isArray(pageData.insight_tags) && pageData.insight_tags.length > 0) {
+        try {
+          // Extract all tag values from insight_tags array
+          const allTagValues = pageData.insight_tags
+            .map((item: InsightTagItem) => item.tag)
+            .filter((tag: string | undefined): tag is string => Boolean(tag));
+
+          if (allTagValues.length > 0) {
+            console.log(`Fetching insights with tags: ${allTagValues.join(', ')}`);
+
+            // Fetch list of all insights
+            const insightsListResponse = await fetch('/api/resource/Insights', {
+              method: 'GET',
+              headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (insightsListResponse.ok) {
+              const insightsListData = await insightsListResponse.json();
+              const insightsList: Array<{ name: string }> = Array.isArray(insightsListData.data)
+                ? insightsListData.data
+                : Array.isArray(insightsListData)
+                ? insightsListData
+                : [];
+
+              if (insightsList.length > 0) {
+                // Fetch details for each insight and filter by tags
+                const insightsResult = await Promise.allSettled(
+                  insightsList.map(async (item) => {
+                    const insightName = item.name;
+                    if (!insightName) {
+                      throw new Error('Insight name is missing');
+                    }
+
+                    const detailResponse = await fetch(
+                      `/api/resource/Insights/${encodeURIComponent(insightName)}`,
+                      {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': `token ${token}`,
+                          'Content-Type': 'application/json',
+                        },
+                      }
+                    );
+
+                    if (!detailResponse.ok) {
+                      throw new Error(`Failed to fetch insight ${insightName}`);
+                    }
+
+                    const detailData = await detailResponse.json();
+                    const insightData = detailData.data || detailData;
+
+                    // Check if insight has any tag matching insight_tags
+                    // Tags field is an array of objects with a 'tag' property: [{ tag: "UI model", ... }, ...]
+                    const insightTags = insightData.tags || [];
+                    let matchingTag: string | undefined = undefined;
+
+                    // Extract tag values from insight's tags array
+                    let insightTagValues: string[] = [];
+                    if (Array.isArray(insightTags)) {
+                      insightTagValues = insightTags
+                        .map((tagItem: any) => {
+                          if (typeof tagItem === 'string') {
+                            return tagItem;
+                          }
+                          return tagItem?.tag || tagItem?.Tag || '';
+                        })
+                        .filter((tag: string): tag is string => Boolean(tag));
+                    } else if (typeof insightTags === 'string') {
+                      insightTagValues = [insightTags];
+                    }
+                    
+                    // Also check tag field directly
+                    if (insightData.tag) {
+                      insightTagValues.push(insightData.tag);
+                    }
+
+                    // Check if any insight tag matches any allowed tag
+                    matchingTag = insightTagValues.find((tag) => allTagValues.includes(tag));
+
+                    if (matchingTag) {
+                      // Use the matching tag for display, or first tag if no match found
+                      const displayTag = matchingTag || (insightTagValues[0] || insightData.about || 'Insights');
+
+                      return {
+                        name: insightData.name || insightName,
+                        title: insightData.title || insightData.name,
+                        creation: insightData.creation,
+                        image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
+                        read_time: insightData.read_time,
+                        about: insightData.about || displayTag || 'Insights',
+                        tag: displayTag,
+                        tags: insightTags, // Store the full tags array
+                      } as ServiceInsightItem;
+                    }
+
+                    return null;
+                  })
+                );
+
+                // Filter out null values (insights that didn't have matching tags)
+                const filteredInsights: ServiceInsightItem[] = insightsResult
+                  .filter((result) => result.status === 'fulfilled' && result.value !== null)
+                  .map((result) => (result as PromiseFulfilledResult<ServiceInsightItem>).value);
+
+                console.log(`Found ${filteredInsights.length} insights matching tags: ${allTagValues.join(', ')}`);
+                pageData.insights_list = filteredInsights;
+              }
+            } else {
+              console.warn('Failed to fetch insights list');
+            }
+          }
+        } catch (error) {
+          // If insights fetch fails, continue with existing data
+          console.warn('Error fetching insights by tags:', error);
+        }
       }
 
       return pageData;
