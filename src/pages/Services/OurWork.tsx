@@ -1,85 +1,85 @@
-import { useState } from "react";
-import { ArrowUpRight} from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import type { AppDispatch, RootState } from "@/store";
 import { DefaultButton } from "@/Components/Button";
 import ParsedHtml from "@/Components/ParsedHtml";
+import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
+import { fetchCaseStudiesByPlatformTags } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import instagram from "@/assets/logo/insta.png";
 import linkedin from "@/assets/logo/linkdin.png";
 import dribbble from "@/assets/logo/dribble.png";
 import behance from "@/assets/logo/behance.png";
 
-type Category = "All" | "Websites" | "Dashboards" | "Mobile Apps" | "Landing Pages";
+// Helper function to convert API attachment path to full URL
+const getImageUrl = (attachPath: string | undefined | null): string => {
+  if (!attachPath || typeof attachPath !== 'string' || attachPath.trim() === '') {
+    return "";
+  }
+  
+  const trimmedPath = attachPath.trim();
+  
+  // If it's already a full URL, return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    return trimmedPath;
+  }
+  
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith("/files/")) {
+    return `https://work.alpheric.com${trimmedPath}`;
+  }
+  
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith("/")) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
+};
 
-const categories: Category[] = ["All", "Websites", "Dashboards", "Mobile Apps", "Landing Pages"];
+// Helper function to check if attachment is a video
+const isVideoFile = (attachPath: string | undefined | null): boolean => {
+  if (!attachPath || typeof attachPath !== 'string') {
+    return false;
+  }
+  
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.m4v'];
+  const lowerPath = attachPath.toLowerCase();
+  
+  return videoExtensions.some(ext => lowerPath.endsWith(ext));
+};
 
-import Image1 from "@/assets/ServicePage/OurWork/Image1.png";
-import Image2 from "@/assets/ServicePage/OurWork/Image2.png";
-import Image3 from "@/assets/ServicePage/OurWork/Image3.png";
-import Image4 from "@/assets/ServicePage/OurWork/Image4.png";
-import Image5 from "@/assets/ServicePage/OurWork/Image5.png";
-import Image6 from "@/assets/ServicePage/OurWork/Image6.png";
+// Helper function to generate slug from case study name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
-const projects = [
-  {
-    id: 1,
-    category: "Product Design",
-    title: "MamaEarth Retail Experience",
-    subtitle: "Mobile App Design",
-    image: Image1,
-    bgColor: "#E3F2FD",
-    type: "Mobile Apps" as Category,
-    link: "#"
-  },
-  {
-    id: 2,
-    category: "Product Design",
-    title: "Analytics Dashboard",
-    subtitle: "Web Dashboard",
-    image: Image2,
-    bgColor: "#424242",
-    type: "Dashboards" as Category,
-    link: "#"
-  },
-  {
-    id: 3,
-    category: "Product Design",
-    title: "Business Dashboard",
-    subtitle: "Web Application",
-    image: Image3,
-    bgColor: "#2E7D32",
-    type: "Dashboards" as Category,
-    link: "#"
-  },
-  {
-    id: 4,
-    category: "Product Design",
-    title: "Analytics Platform",
-    subtitle: "Multi-Device App",
-    image: Image4,
-    bgColor: "#F5F5F5",
-    type: "Websites" as Category,
-    link: "#"
-  },
-  {
-    id: 5,
-    category: "Product Design",
-    title: "User Management System",
-    subtitle: "Web Application",
-    image: Image5,
-    bgColor: "#E3F2FD",
-    type: "Websites" as Category,
-    link: "#"
-  },
-  {
-    id: 6,
-    category: "Product Design",
-    title: "E-commerce Platform",
-    subtitle: "Web Store",
-    image: Image6,
-    bgColor: "#FFFFFF",
-    type: "Websites" as Category,
-    link: "#"
-  },
-];
+// Helper function to get first image from attachments (skip videos)
+const getFirstImage = (attachments: CaseStudyData['attachments']): string => {
+  if (!attachments || !Array.isArray(attachments)) {
+    return "";
+  }
+
+  // Find first non-video attachment
+  for (const attachment of attachments) {
+    if (attachment.attach && !isVideoFile(attachment.attach)) {
+      const url = getImageUrl(attachment.attach);
+      if (url) {
+        return url;
+      }
+    }
+  }
+
+  return "";
+};
+
+// Default background colors for cards
+const defaultBgColors = ["#E3F2FD", "#F5F5F5", "#FFFFFF", "#E3F2FD", "#F5F5F5", "#FFFFFF"];
 
 interface WorkSectionProps {
   heading?: string;
@@ -92,11 +92,98 @@ const WorkSection = ({
   description = "Integral to our approach is a comprehensive user research phase, discovering general and niche audience needs through quantitative and qualitative research.",
   buttonData
 }: WorkSectionProps) => {
-  const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const dispatch = useDispatch<AppDispatch>();
+  const servicePageData = useSelector((state: RootState) => state.servicePage.data);
+  const servicePageLoading = useSelector((state: RootState) => state.servicePage.loading);
+  const servicePageError = useSelector((state: RootState) => state.servicePage.error);
+  const caseStudies = useSelector((state: RootState) => state.caseStudy.caseStudies);
+  const caseStudyLoading = useSelector((state: RootState) => state.caseStudy.loading);
+  const caseStudyError = useSelector((state: RootState) => state.caseStudy.error);
 
-  const filteredProjects = activeCategory === "All" 
-    ? projects 
-    : projects.filter(project => project.type === activeCategory);
+  // Fetch ServicePage data on mount
+  useEffect(() => {
+    if (!servicePageData && !servicePageLoading) {
+      dispatch(fetchServicePageData());
+    }
+  }, [dispatch, servicePageData, servicePageLoading]);
+
+  // Extract platform tag names from select_case_studies_by_tag
+  const platformTagNames = useMemo(() => {
+    if (!servicePageData?.select_case_studies_by_tag) {
+      return [];
+    }
+    return servicePageData.select_case_studies_by_tag
+      .map(item => item.pl_name)
+      .filter((name): name is string => Boolean(name));
+  }, [servicePageData]);
+
+  // Generate categories from select_case_studies_by_tag (including "All")
+  const categories = useMemo(() => {
+    if (!servicePageData?.select_case_studies_by_tag) {
+      return ["All"];
+    }
+    const categoryNames = servicePageData.select_case_studies_by_tag
+      .map(item => item.pl_name)
+      .filter((name): name is string => Boolean(name));
+    return ["All", ...categoryNames];
+  }, [servicePageData]);
+
+  // Track if we've already fetched case studies for current platform tags
+  const caseStudiesCount = Object.keys(caseStudies).length;
+  
+  // Fetch case studies when platform tags are available
+  useEffect(() => {
+    if (platformTagNames.length > 0 && !caseStudyLoading && caseStudiesCount === 0) {
+      dispatch(fetchCaseStudiesByPlatformTags(platformTagNames));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, platformTagNames.join(','), caseStudyLoading, caseStudiesCount]);
+
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+
+  // Filter case studies based on active category
+  const filteredCaseStudies = useMemo(() => {
+    const caseStudyArray = Object.values(caseStudies);
+    
+    if (activeCategory === "All") {
+      return caseStudyArray;
+    }
+
+    return caseStudyArray.filter(caseStudy => {
+      return caseStudy.platform_tags?.some(tag => tag.pl_name === activeCategory);
+    });
+  }, [caseStudies, activeCategory]);
+
+  // Convert case studies to project cards format
+  const projects = useMemo(() => {
+    return filteredCaseStudies.map((caseStudy, index) => {
+      const slug = generateSlug(caseStudy.name);
+      const imageUrl = getFirstImage(caseStudy.attachments);
+      const bgColor = defaultBgColors[index % defaultBgColors.length];
+      
+      // Get platform tags as category (only use pl_name, no fallback)
+      const category = caseStudy.platform_tags && caseStudy.platform_tags.length > 0
+        ? caseStudy.platform_tags[0].pl_name
+        : "";
+
+      return {
+        id: caseStudy.name,
+        category,
+        title: caseStudy.short_title || "",
+        subtitle: caseStudy.main_platform || "",
+        image: imageUrl || "",
+        bgColor,
+        link: `/case-study/${slug}`
+      };
+    });
+  }, [filteredCaseStudies]);
+
+  // Only show loading if we're actively loading and don't have data yet
+  const isLoading = (servicePageLoading && !servicePageData) || 
+                   (caseStudyLoading && Object.keys(caseStudies).length === 0 && platformTagNames.length > 0);
+  
+  // Check for errors
+  const hasError = servicePageError || caseStudyError;
 
   return (
     <section className=" px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px] bg-background">
@@ -124,28 +211,55 @@ const WorkSection = ({
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex flex-wrap justify-center 2xl:gap-3 gap-2 mb-6">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`2xl:px-6 2xl:py-2 px-2 py-1 font-light font-urbanist transition-all border-2 ${
-                activeCategory === category
-                  ? "bg-[#F5F5F5] text-[#3E3E3E] border-[#5AC8DC] hover:bg-[#E3F2FD]"
-                  : "text-[#535353] border-[#E9EAEC] hover:text-[#444444] hover:bg-gray-50"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        {categories.length > 1 && (
+          <div className="flex flex-wrap justify-center 2xl:gap-3 gap-2 mb-6">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`2xl:px-6 2xl:py-2 px-2 py-1 font-light font-urbanist transition-all border-2 ${
+                  activeCategory === category
+                    ? "bg-[#F5F5F5] text-[#3E3E3E] border-[#5AC8DC] hover:bg-[#E3F2FD]"
+                    : "text-[#535353] border-[#E9EAEC] hover:text-[#444444] hover:bg-gray-50"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {hasError && (
+          <div className="text-center py-12">
+            <p className="text-red-500 text-lg font-urbanist">
+              {servicePageError || caseStudyError || "Error loading data"}
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {!hasError && isLoading && (
+          <div className="text-center py-12">
+            <p className="text-[#3E3E3E] text-lg font-urbanist">Loading projects...</p>
+          </div>
+        )}
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} {...project} />
-          ))}
-        </div>
+        {!isLoading && projects.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {projects.map((project) => (
+              <ProjectCard key={project.id} {...project} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && projects.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-[#3E3E3E] text-lg font-urbanist">No projects found.</p>
+          </div>
+        )}
 
         {/* View All Button */}
         <div className="flex justify-center">
@@ -183,41 +297,58 @@ const ProjectCard = ({ category, title, subtitle, bgColor, image, link }: Projec
       className="group overflow-hidden border-0"
       style={{ backgroundColor: bgColor }}
     >
-      <a href={link} className="block">
+      <Link to={link} className="block">
         {/* Top Category Tag + Image */}
         <div className="relative overflow-hidden">
-          <div className="absolute top-1 left-1">
-            <span className="bg-[#F5F5F5] 2xl:px-1 py-1 2xl:text-sm text-[10px] font-light text-[#3E3E3E] font-urbanist">
-              {category}
-            </span>
-          </div>
+          {category && (
+            <div className="absolute top-1 left-1 z-10">
+              <span className="bg-[#F5F5F5] 2xl:px-1 py-1 2xl:text-sm text-[10px] font-light text-[#3E3E3E] font-urbanist">
+                {category}
+              </span>
+            </div>
+          )}
 
-          
+          {image ? (
             <img
               src={image}
               alt={title}
               className="2xl:w-full 2xl:h-full w-full h-[202px] object-cover"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                // Hide image on error and show fallback
+                (e.target as HTMLImageElement).style.display = 'none';
+                const parent = (e.target as HTMLImageElement).parentElement;
+                if (parent && !parent.querySelector('.image-fallback')) {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-full h-[202px] bg-gray-200 flex items-center justify-center image-fallback';
+                  fallback.innerHTML = '<span class="text-gray-400 text-sm">No image</span>';
+                  parent.appendChild(fallback);
+                }
+              }}
             />
-          </div>
-      
-
-        {/* Title, Subtitle, and Icon */}
-        <div className="bg-[#FFFFFF]  py-2 relative">
-          <div className="flex flex-col justify-center">
-            <h3 className="2xl:text-2xl text-[16px] font-semibold text-[#3E3E3E] leading-tight">
-              {title}
-            </h3>
-            <p className="text-[#3E3E3E] 2xl:text-base text-[12px] font-urbanist leading-tight">
-              {subtitle}
-            </p>
-          </div>
-
-          {/* Icon Positioned Between */}
-          <ArrowUpRight
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 2xl:w-10 2xl:h-10 text-[#000000] "
-          />
+          ) : (
+            <div className="w-full h-[202px] bg-gray-200 flex items-center justify-center">
+              <span className="text-gray-400 text-sm">No image</span>
+            </div>
+          )}
         </div>
-      </a>
+      
+        {/* Title and Subtitle - Only show short_title, main_platform */}
+        <div className="bg-[#FFFFFF] py-2">
+          <div className="flex flex-col justify-center">
+            {title && (
+              <h3 className="2xl:text-2xl text-[16px] font-semibold text-[#3E3E3E] leading-tight">
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="text-[#3E3E3E] 2xl:text-base text-[12px] font-urbanist leading-tight">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      </Link>
     </div>
   );
 };
@@ -269,6 +400,7 @@ function SocialCta() {
     </>
   );
 }
+
 // Main component that includes both WorkSection and SocialMedia
 interface OurWorkProps {
   heading?: string;

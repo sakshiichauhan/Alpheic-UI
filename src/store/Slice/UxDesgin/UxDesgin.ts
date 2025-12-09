@@ -46,6 +46,13 @@ export interface DesignConsultantListItem {
   role?: string;
 }
 
+export interface SelectCaseStudiesByTagItem {
+  pl_name: string;
+  doctype: string;
+  idx?: number;
+  name?: string;
+}
+
 export interface ServicePageData {
   // Service Hero Section
   service_hero: number;
@@ -127,6 +134,9 @@ export interface ServicePageData {
 
   // Human / Service Design Cards Section
   service_design_cards_table: ServiceDesignCard[];
+
+  // Select Case Studies By Tag Section
+  select_case_studies_by_tag?: SelectCaseStudiesByTagItem[];
 }
 
 interface ServicePageState {

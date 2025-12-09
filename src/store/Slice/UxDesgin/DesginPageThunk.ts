@@ -1,11 +1,23 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '../../rootReducer';
-import type { Attachment } from '../CaseStudy/CaseStudyThunk';
 
 // API Response Types
 export interface ServiceCategoryServiceItem {
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
   service?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
 }
+
+type CaseStudyAttachment = { attach?: string };
 
 // Helper function to generate slug from case study name
 const generateSlug = (name: string): string => {
@@ -43,7 +55,7 @@ const getImageUrl = (attachPath: string | undefined | null): string => {
 };
 
 export interface CaseStudySlideData {
-  full_title: string;
+  full_title?: string;
   very_short_description?: string;
   first_attachment?: string;
   case_study_slug?: string;
@@ -51,7 +63,11 @@ export interface CaseStudySlideData {
 }
 
 export interface LinkServiceNameItem {
-  name1: string;
+ 
+ 
+ 
+  name1?: string;
+  
   // Merged fields from ServicePage L3 API
   service_category_heading?: string;
   service_category_description?: string;
@@ -61,8 +77,19 @@ export interface LinkServiceNameItem {
 }
 
 export interface ToolsListItem {
-  tab_name: string;
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
+  tab_name?: string;
   tool?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
   // Merged fields from ToolsWeUse API
   logo_image?: string;
   logo_name?: string;
@@ -70,12 +97,35 @@ export interface ToolsListItem {
 }
 
 export interface FAQsListItem {
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
   title?: string;
   description?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
 }
 
 export interface ConsultantsListItem {
+  name: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
   name1?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
+  // Merged fields from Consultants API
   attach_image?: string;
   role?: string;
 }
@@ -166,9 +216,9 @@ export const fetchDesignPageL2Data = createAsyncThunk(
           pageData.link_service_names.map(async (linkItem: LinkServiceNameItem) => {
             try {
               // Fetch ServicePage L3 details using name1 as the identifier
-              const serviceName = linkItem.name1;
+              const serviceName = linkItem.name1 ;
               if (!serviceName) {
-                console.warn('No name1 found for link_service_names item');
+                console.warn('No name1 or name found for link_service_names item');
                 return linkItem;
               }
 
@@ -201,7 +251,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
               }
             } catch (error) {
               // If ServicePage L3 fetch fails, return original item
-              console.warn(`Error fetching ServicePage L3 details for ${linkItem.name1}:`, error);
+              console.warn(`Error fetching ServicePage L3 details for ${linkItem.name1 || 'unknown'}:`, error);
               return linkItem;
             }
           })
@@ -335,28 +385,32 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                       });
                       
                       // Get 1st attachment from attachments array - filter out videos, only get images
-                      const attachments = csData.attachments && Array.isArray(csData.attachments) 
-                        ? csData.attachments 
+                      const attachments: CaseStudyAttachment[] = csData.attachments && Array.isArray(csData.attachments) 
+                        ? (csData.attachments as CaseStudyAttachment[])
                         : [];
                       
-                     
-                      const firstAttachment = attachments.length > 0 ? attachments[0] : undefined;
-                      const firstAttachmentPath = firstAttachment?.attach;
+                      // Filter out videos and get first image attachment ONLY (no fallback to video)
+                      const imageAttachments = attachments
+                        .filter((att: CaseStudyAttachment) => att.attach && !isVideoFile(att.attach))
+                        .map((att: CaseStudyAttachment) => att.attach)
+                        .filter((attach: string | undefined): attach is string => !!attach); // Type guard to ensure string
+
+                      const firstAttachment = imageAttachments.length > 0 ? imageAttachments[0] : undefined;
 
                       console.log(`  Case study "${csData.name}" attachment processing:`, {
                         totalAttachments: attachments.length,
-                        imageAttachmentsCount: attachments.length,
-                        allAttachments: attachments.map((att: Attachment) => ({
+                        imageAttachmentsCount: imageAttachments.length,
+                        allAttachments: attachments.map((att: CaseStudyAttachment) => ({
                           attach: att.attach,
                           isVideo: att.attach ? isVideoFile(att.attach) : false
                         })),
                         firstAttachment: firstAttachment,
-                        attachmentUrl: firstAttachmentPath ? getImageUrl(firstAttachmentPath) : 'N/A'
+                        attachmentUrl: firstAttachment ? getImageUrl(firstAttachment) : 'N/A'
                       });
 
                       // Only include if we have all required fields
-                      if (csData.full_title && firstAttachmentPath) {
-                        const imageUrl = getImageUrl(firstAttachmentPath);
+                      if (csData.full_title && firstAttachment) {
+                        const imageUrl = getImageUrl(firstAttachment);
                         console.log(`  ✓ Adding case study slide: "${csData.full_title}" with image: ${imageUrl}`);
                         return {
                           full_title: csData.full_title, // From CaseStudy API
@@ -374,7 +428,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                         return null;
                       }
                     })
-                    .filter((slide: CaseStudySlideData | null): slide is CaseStudySlideData => slide !== null);
+                    
 
                   if (caseStudySlides.length > 0) {
                     return {
@@ -410,9 +464,9 @@ export const fetchDesignPageL2Data = createAsyncThunk(
           pageData.consultants_list.map(async (consultantItem: ConsultantsListItem) => {
             try {
               // Fetch consultant details from Consultants API using name1 as the identifier
-              const consultantName = consultantItem.name1;
+              const consultantName = consultantItem.name1 || consultantItem.name;
               if (!consultantName) {
-                console.warn('No name1 found for consultants_list item');
+                console.warn('No name1 or name found for consultants_list item');
                 return consultantItem;
               }
 
@@ -444,7 +498,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
               }
             } catch (error) {
               // If consultant fetch fails, return original item
-              console.warn(`Error fetching consultant details for ${consultantItem.name1}:`, error);
+              console.warn(`Error fetching consultant details for ${consultantItem.name1 || consultantItem.name}:`, error);
               return consultantItem;
             }
           })
@@ -456,9 +510,6 @@ export const fetchDesignPageL2Data = createAsyncThunk(
 
       // Fetch ToolsWeUse details for each item in tools_list
       if (pageData.tools_list && Array.isArray(pageData.tools_list)) {
-        console.log('=== Starting ToolsWeUse Enrichment ===');
-        console.log('Total tools fetched:', pageData.tools_list.length);
-        
         const enrichedToolsList = await Promise.all(
           pageData.tools_list.map(async (toolItem: ToolsListItem) => {
             try {
