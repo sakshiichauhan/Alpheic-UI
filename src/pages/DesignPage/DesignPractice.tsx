@@ -6,64 +6,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
 import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import { ParsedHtml } from '@/Components/ParsedHtml';
-import p1 from "@/assets/OurProjects/p1.png";
-import p2 from "@/assets/OurProjects/p2.png";
 import Amber from "@/assets/Tools/Amber.png";
 
-// --- Data for our cards ---
-const digitalDesignServices = [
-  'Brand identity',
-  'UX UI flows and prototypes',
-  'Design systems',
-  'Responsive web and app',
-  'Visual and motion',
-];
-
-const spaceDesignServices = [
-  'Retail and experience spaces',
-  'Office and environment branding',
-  'Facades and windows',
-  'Wayfinding and signage',
-  'Lighting and materials',
-];
-
-const caseStudySlides: SlideItem[] = [
-  {
-    image: p1,
-    alt: 'Analytics dashboard on desktop and mobile',
-    logoLabel: 'amber',
-    headline: 'CricksLab – Smarter Cricket UX',
-    description:
-      'We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.',
-  },
-  {
-    image: p2,
-    alt: 'Product experience screens for task management',
-    logoLabel: 'amber',
-    headline: 'Unified Fulfilment Intelligence',
-    description:
-      'Designing connected workflows that keep teams aligned across platforms and touchpoints.',
-  },
-];
-
-const spaceDesignSlides: SlideItem[] = [
-  {
-    image: p2,
-    alt: 'Two phones showing a chat application',
-    logoLabel: 'amber',
-    headline: 'Spatial Journeys with Purpose',
-    description:
-      'We choreograph environments that translate your digital ethos into the physical world.',
-  },
-  {
-    image: p1,
-    alt: 'Analytics dashboard on desktop and mobile',
-    logoLabel: 'amber',
-    headline: 'Immersive Brand Worlds',
-    description:
-      'From façades to wayfinding, every detail strengthens the narrative your visitors experience.',
-  },
-];
+// Default data removed - all data comes from API
 
 // --- 1. Helper Component for List Items ---
 
@@ -129,6 +74,8 @@ interface PracticeCardProps {
     headline?: string;
     description?: string;
   };
+  caseStudySlug?: string;
+  caseStudySlugs?: string[]; // Array of slugs for all case studies in gallery
 }
 
 const PracticeCard: React.FC<PracticeCardProps> = ({
@@ -141,6 +88,8 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
   showNavArrows = false,
   gallery,
   overlay,
+  caseStudySlug,
+  caseStudySlugs,
 }) => {
   // ... (All your state and logic here is correct and unchanged) ...
   const textOrder = imagePosition === 'left' ? 'lg:order-2 order-2' : 'lg:order-1 order-2';
@@ -185,14 +134,15 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
     setActiveIndex(index);
   };
 
+  // Use current slide data (from CaseStudy API) or overlay fallback
   const headline =
     currentSlide.headline ??
     overlay?.headline ??
-    'CricksLab – Smarter Cricket UX';
+    '';
   const descriptionText =
     currentSlide.description ??
     overlay?.description ??
-    'We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.';
+    '';
 
   const gridTemplate =
     imagePosition === 'left'
@@ -227,6 +177,18 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.98, x: -60 }}
               transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+              onError={(e) => {
+                console.error('DesignPractice: Image failed to load:', {
+                  src: currentSlide.image,
+                  alt: currentSlide.alt,
+                  slideIndex: activeIndex
+                });
+                // Optionally set a fallback or hide the image
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log('DesignPractice: Image loaded successfully:', currentSlide.image);
+              }}
             />
           </AnimatePresence>
         </div>
@@ -293,9 +255,22 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
                     exit={{ opacity: 0, y: -12 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
-                    <h3 className="text-[16px] md:text-[18px] lg:text-[20px] xl:text-[22px] 2xl:text-[24px] font-urbanist font-semibold text-white flex items-center gap-[10px]">
-                      {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1} /></div>
-                    </h3>
+                    {(() => {
+                      // Get the slug for the current slide
+                      const currentSlug = caseStudySlugs && caseStudySlugs[activeIndex] || caseStudySlug;
+                      return currentSlug ? (
+                        <Link
+                          to={`/case-study/${currentSlug}`}
+                          className="text-[16px] md:text-[18px] lg:text-[20px] xl:text-[22px] 2xl:text-[24px] font-urbanist font-semibold text-white flex items-center gap-[10px] hover:opacity-90 transition-opacity"
+                        >
+                          {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1} /></div>
+                        </Link>
+                      ) : (
+                        <h3 className="text-[16px] md:text-[18px] lg:text-[20px] xl:text-[22px] 2xl:text-[24px] font-urbanist font-semibold text-white flex items-center gap-[10px]">
+                          {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1} /></div>
+                        </h3>
+                      );
+                    })()}
                     <p className="text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px] 2xl:text-[20px] font-urbanist text-[#EEEEEE] line-clamp-2">
                       {descriptionText}
                     </p>
@@ -333,66 +308,103 @@ const DesignPractice: React.FC = () => {
   // Get titles from link_service_names array
   const linkServiceNames = data?.link_service_names || [];
   
-  // Helper function to get services from API or use defaults
-  const getServices = (serviceItem: LinkServiceNameItem | undefined, defaultServices: string[]): string[] => {
+  // Helper function to get services from API - NO DEFAULTS
+  const getServices = (serviceItem: LinkServiceNameItem | undefined): string[] => {
     if (serviceItem?.service_category_services && Array.isArray(serviceItem.service_category_services) && serviceItem.service_category_services.length > 0) {
       const mappedServices = serviceItem.service_category_services
         .map(item => item.service)
         .filter((service): service is string => Boolean(service));
-      return mappedServices.length > 0 ? mappedServices : defaultServices;
+      return mappedServices;
     }
-    return defaultServices;
+    return [];
   };
 
-  // Prepare cards data dynamically from linkServiceNames
+  // Prepare cards data dynamically from linkServiceNames - NO DEFAULTS, ONLY API DATA
   const practiceCards = useMemo(() => {
     if (!linkServiceNames || linkServiceNames.length === 0) {
-      // Fallback to default cards if no data
-      return [
-        {
-          title: "Digital Design",
-          description: "Identity, UX, UI, web and app interfaces, design systems, motion.",
-          services: digitalDesignServices,
-          imagePosition: 'right' as ImagePosition,
-          gallery: caseStudySlides,
-        },
-        {
-          title: "Space Design",
-          description: "Retail and workplace, facades and signage, exhibitions and installations.",
-          services: spaceDesignServices,
-          imagePosition: 'left' as ImagePosition,
-          gallery: spaceDesignSlides,
-        },
-      ];
+      console.log('DesignPractice: No linkServiceNames found');
+      return [];
     }
 
-    // Map over linkServiceNames and create card data
-    return linkServiceNames.map((item, index) => {
-      // Alternate image position: even index = right, odd index = left
-      const imagePosition: ImagePosition = index % 2 === 0 ? 'right' : 'left';
-      
-      // Use default services based on index if API doesn't provide services
-      const defaultServicesForIndex = index % 2 === 0 ? digitalDesignServices : spaceDesignServices;
-      
-      // Use default gallery based on index
-      const defaultGallery = index % 2 === 0 ? caseStudySlides : spaceDesignSlides;
+    console.log('DesignPractice: Processing linkServiceNames:', linkServiceNames.length, 'items');
 
-      return {
-        title: item.name1 || (index % 2 === 0 ? "Digital Design" : "Space Design"),
-        description: item.service_category_description || 
-          (index % 2 === 0 
-            ? "Identity, UX, UI, web and app interfaces, design systems, motion."
-            : "Retail and workplace, facades and signage, exhibitions and installations."),
-        services: getServices(item, defaultServicesForIndex),
-        imagePosition,
-        gallery: defaultGallery,
-      };
-    });
+    // Map over linkServiceNames and create card data - ONLY FROM CASE STUDY API
+    return linkServiceNames
+      .map((item, index) => {
+        // Get case study slides data (can have multiple case studies)
+        const caseStudySlides = item.case_study_slides;
+        
+        // ONLY create card if we have complete case study data
+        if (!caseStudySlides || caseStudySlides.length === 0) {
+          console.log(`DesignPractice: Item ${index} - Skipping: No case study data`);
+          return null;
+        }
+
+        // Filter out slides without required data
+        const validSlides = caseStudySlides.filter(slide => 
+          slide.first_attachment && slide.full_title
+        );
+
+        if (validSlides.length === 0) {
+          console.log(`DesignPractice: Item ${index} - Skipping: No valid case study slides`);
+          return null;
+        }
+
+        // Alternate image position: even index = right, odd index = left
+        const imagePosition: ImagePosition = index % 2 === 0 ? 'right' : 'left';
+        
+        // Create gallery from ALL case study slides - ALL FROM CASE STUDY API
+        const gallery: SlideItem[] = validSlides.map((slide) => {
+          console.log(`DesignPractice: Creating slide for "${slide.full_title}":`, {
+            firstAttachment: slide.first_attachment,
+            attachmentType: typeof slide.first_attachment,
+            hasAttachment: !!slide.first_attachment
+          });
+          
+          return {
+            image: slide.first_attachment as string, // From CaseStudy API - 1st attachment (already processed URL)
+            alt: slide.full_title || '', // From CaseStudy API
+            logoLabel: 'amber', // Only default - logo
+            headline: slide.full_title || '', // From CaseStudy API
+            description: slide.very_short_description || '', // From CaseStudy API
+          };
+        });
+        
+        console.log(`DesignPractice: Item ${index} - Created card with ${validSlides.length} case study slide(s):`, {
+          title: item.name1,
+          slidesCount: validSlides.length,
+          slugs: validSlides.map(s => s.case_study_slug),
+          galleryImages: gallery.map(g => g.image)
+        });
+
+        // Return card with ALL data from CaseStudy API (except logo)
+        return {
+          title: item.name1, // From link_service_names
+          description: item.service_category_description, // From link_service_names
+          services: getServices(item), // From ServicePage L3
+          imagePosition,
+          gallery, // From CaseStudy API - can have multiple slides
+          caseStudySlug: validSlides[0]?.case_study_slug, // First case study slug for backward compatibility
+          caseStudySlugs: validSlides.map(slide => slide.case_study_slug || '').filter(Boolean), // All case study slugs for current slide linking
+        };
+      })
+      .filter((card): card is NonNullable<typeof card> => card !== null);
   }, [linkServiceNames]);
 
   // Don't render if link_service is 0
   if (data && !shouldShowSection) {
+    console.log('DesignPractice: Not showing section - link_service is not 1');
     return null;
+  }
+
+  // Show section even if no cards - at least show header
+  if (practiceCards.length === 0) {
+    console.log('DesignPractice: No practice cards available', {
+      hasData: !!data,
+      linkServiceNamesCount: linkServiceNames.length,
+      shouldShowSection
+    });
+    // Still render the section header so user knows something is loading or missing
   }
 
   return (
@@ -417,45 +429,52 @@ const DesignPractice: React.FC = () => {
 
       {/* --- Main Content (Cards) --- */}
       <main className="2xl:space-y-[128px] xl:space-y-[100px] lg:space-y-[80px] md:space-y-[60px] sm:space-y-[40px] space-y-[24px]">
-        {practiceCards.map((card, index) => {
-          // Determine image source based on position (alternate between p1 and p2)
-          const imageSrc = index % 2 === 0 ? p1 : p2;
-          const imageAlt = index % 2 === 0 
-            ? "Laptop showing brand identity examples" 
-            : "Two phones showing a chat application";
-          const imageCaption = index % 2 === 0 
-            ? "Brand identity" 
-            : "Retail and experience spaces";
+        {practiceCards.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-[var(--medium-text)]">No practice cards available. Check console for details.</p>
+          </div>
+        ) : (
+          practiceCards.map((card, index) => {
+            // All data from CaseStudy API (gallery is guaranteed to exist at this point)
+            if (!card.gallery || card.gallery.length === 0) {
+              return null;
+            }
+            
+            const firstSlide = card.gallery[0];
+            
+            // All data from CaseStudy API
+            // image is required in SlideItem, alt is optional but we provide default
+            const imageSrc = firstSlide.image; // From CaseStudy API - 1st attachment (required - string type)
+            const imageAlt = firstSlide.alt || card.title || ''; // From CaseStudy API - full_title (optional, fallback to title)
+            const imageCaption = '';
 
-          // Default overlay based on index
-          const defaultOverlay = index % 2 === 0
-            ? {
-                logoLabel: 'amber',
-                headline: 'CricksLab – Smarter Cricket UX',
-                description: 'We combine logic, emotion, and function to create systems that scale across websites, apps, offices, and stores.',
-              }
-            : {
-                logoLabel: 'amber',
-                headline: 'Spatial Journeys with Purpose',
-                description: 'We choreograph environments that translate your digital ethos into the physical world.',
-              };
+            // Overlay from CaseStudy API
+            const overlay = {
+              logoLabel: 'amber', // Only default - logo
+              headline: firstSlide.headline || '', // From CaseStudy API - full_title
+              description: firstSlide.description || '', // From CaseStudy API - very_short_description
+            };
 
-          return (
-            <PracticeCard
-              key={index}
-              title={card.title}
-              description={card.description}
-              services={card.services}
-              imageSrc={imageSrc}
-              imageAlt={imageAlt}
-              imageCaption={imageCaption}
-              imagePosition={card.imagePosition}
-              showNavArrows={card.gallery && card.gallery.length > 1}
-              gallery={card.gallery}
-              overlay={defaultOverlay}
-            />
-          );
-        })}
+            return (
+              <PracticeCard
+                key={index}
+                title={card.title || ''}
+                description={card.description || ''}
+                services={card.services}
+                imageSrc={imageSrc}
+                imageAlt={imageAlt}
+                imageCaption={imageCaption}
+                imagePosition={card.imagePosition}
+                showNavArrows={card.gallery && card.gallery.length > 1} // Show arrows if multiple case studies
+                gallery={card.gallery}
+                overlay={overlay}
+                caseStudySlug={card.caseStudySlug}
+                caseStudySlugs={card.caseStudySlugs}
+              />
+            );
+          })
+          .filter((card) => card !== null)
+        )}
       </main>
     </section>
   );

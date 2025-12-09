@@ -17,6 +17,49 @@ export interface ServiceCategoryServiceItem {
   doctype: string;
 }
 
+// Helper function to generate slug from case study name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+// Helper function to convert API attachment path to full URL
+const getImageUrl = (attachPath: string | undefined | null): string => {
+  if (!attachPath || typeof attachPath !== 'string' || attachPath.trim() === '') {
+    return "";
+  }
+  
+  const trimmedPath = attachPath.trim();
+  
+  // If it's already a full URL, return as is
+  if (trimmedPath.startsWith("http://") || trimmedPath.startsWith("https://")) {
+    return trimmedPath;
+  }
+  
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith("/files/")) {
+    return `https://work.alpheric.com${trimmedPath}`;
+  }
+  
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith("/")) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
+};
+
+export interface CaseStudySlideData {
+  full_title?: string;
+  very_short_description?: string;
+  first_attachment?: string;
+  case_study_slug?: string;
+  case_study_name?: string;
+}
+
 export interface LinkServiceNameItem {
   name: string;
   owner?: string;
@@ -34,6 +77,8 @@ export interface LinkServiceNameItem {
   service_category_heading?: string;
   service_category_description?: string;
   service_category_services?: ServiceCategoryServiceItem[];
+  // Case study data - can have multiple case studies for one service
+  case_study_slides?: CaseStudySlideData[];
 }
 
 export interface ToolsListItem {
@@ -219,6 +264,203 @@ export const fetchDesignPageL2Data = createAsyncThunk(
 
         // Update pageData with enriched link_service_names list
         pageData.link_service_names = enrichedLinkServiceNames;
+
+        // Fetch all CaseStudies and match them with link_service_names
+        try {
+          // Step 1: Fetch the list of case studies
+          const caseStudyListResponse = await fetch('/api/resource/CaseStudy', {
+            method: 'GET',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (caseStudyListResponse.ok) {
+            const caseStudyListData = await caseStudyListResponse.json();
+            const caseStudyList = Array.isArray(caseStudyListData.data)
+              ? caseStudyListData.data
+              : Array.isArray(caseStudyListData)
+              ? caseStudyListData
+              : [];
+
+            if (caseStudyList.length > 0) {
+              // Step 2: Fetch full details for each case study
+              const caseStudyDetails = await Promise.allSettled(
+                caseStudyList.map(async (item: { name: string }) => {
+                  const caseStudyName = item.name;
+                  if (!caseStudyName) {
+                    throw new Error('Case study name is missing');
+                  }
+
+                  const detailResponse = await fetch(
+                    `/api/resource/CaseStudy/${encodeURIComponent(caseStudyName)}`,
+                    {
+                      method: 'GET',
+                      headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                    }
+                  );
+
+                  if (!detailResponse.ok) {
+                    throw new Error(`Failed to fetch case study ${caseStudyName}`);
+                  }
+
+                  const detailData = await detailResponse.json();
+                  const caseStudyData = detailData.data || detailData;
+                  
+                  return { name: caseStudyName, data: caseStudyData };
+                })
+              );
+
+              // Step 3: Match ALL case studies with link_service_names by service_linking.name1 === name1
+              console.log('=== Starting Case Study Matching ===');
+              console.log('Total case studies fetched:', caseStudyDetails.filter(r => r.status === 'fulfilled').length);
+              
+              const enrichedWithCaseStudies = enrichedLinkServiceNames.map((linkItem) => {
+                const serviceName = linkItem.name1;
+                if (!serviceName) {
+                  console.warn('No name1 found for link_service_names item:', linkItem);
+                  return linkItem;
+                }
+
+                console.log(`\n--- Looking for ALL case studies matching service: "${serviceName}" ---`);
+
+                // Find ALL matching case studies where service_linking.name1 === name1
+                const matchingCaseStudies = caseStudyDetails
+                  .filter((result) => result.status === 'fulfilled')
+                  .map((result) => (result as PromiseFulfilledResult<{ name: string; data: any }>).value)
+                  .filter((cs) => {
+                    // Check both lowercase and capitalized field names
+                    const serviceLinking = cs.data.service_linking || cs.data.Service_linking;
+                    
+                    if (!serviceLinking) {
+                      return false;
+                    }
+                    
+                    // Handle array format - service_linking is an array of objects with 'name1' field
+                    if (Array.isArray(serviceLinking)) {
+                      const matches = serviceLinking.some((sl: any) => {
+                        const name1Value = sl?.name1 || sl?.Name1;
+                        const isMatch = name1Value === serviceName;
+                        if (isMatch) {
+                          console.log(`    ✓ MATCH FOUND! CaseStudy "${cs.data.name}" has name1 "${name1Value}" matching "${serviceName}"`);
+                        }
+                        return isMatch;
+                      });
+                      return matches;
+                    }
+                    
+                    // If it's an object, check if it has a name1 field
+                    if (typeof serviceLinking === 'object') {
+                      const name1Value = serviceLinking.name1 || serviceLinking.Name1;
+                      const isMatch = name1Value === serviceName;
+                      if (isMatch) {
+                        console.log(`    ✓ MATCH FOUND! CaseStudy "${cs.data.name}" has name1 "${name1Value}" matching "${serviceName}"`);
+                      }
+                      return isMatch;
+                    }
+                    
+                    return false;
+                  });
+
+                if (matchingCaseStudies.length > 0) {
+                  console.log(`\n✓ Found ${matchingCaseStudies.length} matching case study/studies for service "${serviceName}"`);
+
+                  // Helper function to check if attachment is a video
+                  const isVideoFile = (attachPath: string | undefined | null): boolean => {
+                    if (!attachPath || typeof attachPath !== 'string') {
+                      return false;
+                    }
+                    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.m4v'];
+                    const lowerPath = attachPath.toLowerCase();
+                    return videoExtensions.some(ext => lowerPath.endsWith(ext));
+                  };
+
+                  // Get all case study slides - create array of slides from all matching case studies
+                  const caseStudySlides = matchingCaseStudies
+                    .map((matchingCaseStudy) => {
+                      const csData = matchingCaseStudy.data;
+                      
+                      console.log(`  Processing case study "${csData.name}":`, {
+                        attachmentsCount: csData.attachments?.length || 0,
+                        attachments: csData.attachments
+                      });
+                      
+                      // Get 1st attachment from attachments array - filter out videos, only get images
+                      const attachments = csData.attachments && Array.isArray(csData.attachments) 
+                        ? csData.attachments 
+                        : [];
+                      
+                      // Filter out videos and get first image attachment ONLY (no fallback to video)
+                      const imageAttachments = attachments
+                        .filter(att => att.attach && !isVideoFile(att.attach))
+                        .map(att => att.attach)
+                        .filter((attach): attach is string => !!attach); // Type guard to ensure string
+
+                      const firstAttachment = imageAttachments.length > 0 ? imageAttachments[0] : undefined;
+
+                      console.log(`  Case study "${csData.name}" attachment processing:`, {
+                        totalAttachments: attachments.length,
+                        imageAttachmentsCount: imageAttachments.length,
+                        allAttachments: attachments.map(att => ({
+                          attach: att.attach,
+                          isVideo: att.attach ? isVideoFile(att.attach) : false
+                        })),
+                        firstAttachment: firstAttachment,
+                        attachmentUrl: firstAttachment ? getImageUrl(firstAttachment) : 'N/A'
+                      });
+
+                      // Only include if we have all required fields
+                      if (csData.full_title && firstAttachment) {
+                        const imageUrl = getImageUrl(firstAttachment);
+                        console.log(`  ✓ Adding case study slide: "${csData.full_title}" with image: ${imageUrl}`);
+                        return {
+                          full_title: csData.full_title, // From CaseStudy API
+                          very_short_description: csData.very_short_description || csData.short_description || '', // From CaseStudy API
+                          first_attachment: imageUrl, // From CaseStudy API - 1st attachment (processed URL)
+                          case_study_slug: generateSlug(csData.name), // Generated from CaseStudy name
+                          case_study_name: csData.name, // From CaseStudy API
+                        };
+                      } else {
+                        console.warn(`  ⚠ Skipping case study "${csData.name}" - missing required fields:`, {
+                          hasFullTitle: !!csData.full_title,
+                          hasAttachment: !!firstAttachment,
+                          attachmentsArray: attachments
+                        });
+                        return null;
+                      }
+                    })
+                    .filter((slide): slide is CaseStudySlideData => slide !== null);
+
+                  if (caseStudySlides.length > 0) {
+                    return {
+                      ...linkItem,
+                      case_study_slides: caseStudySlides, // Array of all matching case studies
+                    };
+                  }
+                } else {
+                  console.warn(`\n✗ No matching case studies found for service: "${serviceName}"`);
+                  console.warn('  Available case studies:', caseStudyDetails
+                    .filter(r => r.status === 'fulfilled')
+                    .map(r => (r as PromiseFulfilledResult<{ name: string; data: any }>).value.data.name));
+                }
+
+                return linkItem;
+              });
+              
+              console.log('=== Case Study Matching Complete ===\n');
+
+              // Update pageData with case study enriched link_service_names
+              pageData.link_service_names = enrichedWithCaseStudies;
+            }
+          }
+        } catch (error) {
+          // If case study fetch fails, continue with existing data
+          console.warn('Error fetching case studies for link_service_names:', error);
+        }
       }
 
       // Fetch Consultants details for each item in consultants_list

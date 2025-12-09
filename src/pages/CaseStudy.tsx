@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "@/store/rootReducer";
+import type { AppDispatch } from "@/store";
 import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { ArrowUpRight } from "lucide-react";
 
 // Helper function to generate slug from case study name (same as OurProjects)
@@ -376,12 +378,31 @@ const CaseStudySection: React.FC<{ caseStudyData: CaseStudyData }> = ({
 const CaseStudyPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
+  const dispatch = useDispatch<AppDispatch>();
   const { caseStudies, loading, error } = useSelector((state: RootState) => state.caseStudy);
 
   // Find case study by slug (match by name after converting to slug)
   const caseStudyData = Object.values(caseStudies).find(
     (cs) => generateSlug(cs.name) === slug
   );
+
+  // Fetch all case studies if not already loaded or if case study not found
+  useEffect(() => {
+    if (slug) {
+      // If we don't have the case study data and we're not currently loading
+      if (!caseStudyData && !loading) {
+        // If we have no case studies loaded at all, fetch them
+        if (Object.keys(caseStudies).length === 0) {
+          console.log('CaseStudy: No case studies loaded, fetching all case studies to find slug:', slug);
+          dispatch(fetchAllCaseStudies());
+        } else {
+          // We have some case studies but not the one we need - it might not exist
+          console.log('CaseStudy: Case study not found in loaded data for slug:', slug);
+          console.log('CaseStudy: Available case studies:', Object.keys(caseStudies));
+        }
+      }
+    }
+  }, [slug, caseStudyData, loading, caseStudies, dispatch]);
 
   // Scroll to title when navigating from OurProjects
   useEffect(() => {
@@ -422,7 +443,17 @@ const CaseStudyPage: React.FC = () => {
     );
   }
 
-  if (!caseStudyData) {
+  // Show loading while fetching if we don't have the case study yet
+  if (!caseStudyData && loading) {
+    return (
+      <section className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] text-center">
+        <p className="text-[var(--medium-text)]">Loading case study...</p>
+      </section>
+    );
+  }
+
+  // Show error or not found only after loading is complete
+  if (!caseStudyData && !loading) {
     return (
       <section className="w-full 2xl:pb-[84px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]
   text-center">
@@ -440,6 +471,10 @@ const CaseStudyPage: React.FC = () => {
         </Link>
       </section>
     );
+  }
+
+  if (!caseStudyData) {
+    return null; // Should not reach here due to checks above, but TypeScript safety
   }
 
   return <CaseStudySection caseStudyData={caseStudyData} />;
