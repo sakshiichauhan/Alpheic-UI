@@ -133,7 +133,7 @@ const HomePage: React.FC = () => {
 
             {/* ✅ Floating Video Panel */}
             {isPanelVisible && (
-              <div className="lg:block hidden fixed bottom-12 md:bottom-[50px] md:right-[50px] bg-slate-900 text-white w-[180px] sm:w-[200px] md:w-[158px] aspect-[9/16]">
+              <div className="fixed bottom-12 md:bottom-[50px] z-[9999] md:right-[50px] bg-slate-900 text-white w-[80px] sm:w-[110px] md:w-[158px] aspect-[9/16] hover:scale-[1.4] transition-transform duration-300 ease-in-out origin-bottom-right">
                 <div className="relative w-full h-full">
                   <video
                     ref={videoRef}
