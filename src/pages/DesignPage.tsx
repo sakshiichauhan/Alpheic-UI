@@ -45,7 +45,7 @@ import DesignHeroSection from "@/pages/DesignPage/Homepage"
 import DesignPractice from "@/pages/DesignPage/DesignPractice"
 import ToolsSection from "@/pages/DesignPage/ToolsSection"
 import Table from "@/pages/DesignPage/Table"
-import LatestInsights from "@/pages/Homepage/Latest insights"
+import Insights from "@/pages/DesignPage/Insights"
 import CallToActionBanner from "@/pages/ContractUsFinal/CallToActionBanner"
 import FrequentlyAskedQuestions from "@/pages/CareerPage/frequentlyAskedQuestions"
 import DesignExpert from "@/pages/Services/DesignExpert"
@@ -58,7 +58,7 @@ export const DesignPage = () => {
     <DesignPractice/>
     <ToolsSection/>
     <Table/>
-    <LatestInsights/>
+    <Insights/>
     <DesignExpert/>
     <FrequentlyAskedQuestions/>
     <CallToActionBanner/>
