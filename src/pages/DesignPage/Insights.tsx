@@ -11,10 +11,7 @@ const getImageUrl = (path?: string | null) => {
   if (!path) return "";
   const trimmed = path.trim();
   if (!trimmed) return "";
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   if (trimmed.startsWith("/files/")) return `https://work.alpheric.com${trimmed}`;
-  if (!trimmed.startsWith("/")) return `https://work.alpheric.com/files/${trimmed}`;
-  return `https://work.alpheric.com${trimmed}`;
 };
 
 type Post = {
@@ -93,35 +90,97 @@ export default function Insights({ buttonData }: InsightsProps) {
     }
   }, [dispatch, data, loading]);
 
-  // Convert insights_list to Post format, filtering to only show "Latest Service" tag
+
   const posts: Post[] = useMemo(() => {
     if (!data?.insights_list || data.insights_list.length === 0) {
       return [];
     }
     
-    // Filter to only show insights with "Latest Service" tag
-    const latestServiceInsights = data.insights_list.filter((insight) => {
-      // Check if the tag is "Latest Service"
-      return insight.tag === "Latest Service" || insight.about === "Latest Service";
-    });
+    // Get all allowed tags from select_insight_tags
+    const allowedTags: string[] = [];
+    if (data?.select_insight_tags && Array.isArray(data.select_insight_tags)) {
+      allowedTags.push(
+        ...data.select_insight_tags
+          .map((item) => item.tag)
+          .filter((tag): tag is string => Boolean(tag))
+      );
+    }
+    
+    // If no tags are specified, show all insights (fallback behavior)
+    const filteredInsights = allowedTags.length > 0
+      ? data.insights_list.filter((insight) => {
+          // Get tags from insight - can be an array of objects or strings, or a single tag string
+          const insightTags = insight.tags || [];
+          let insightTagValues: string[] = [];
+          
+          if (Array.isArray(insightTags)) {
+            // Extract tag values from array
+            insightTagValues = insightTags
+              .map((tagItem) => {
+                if (typeof tagItem === 'string') {
+                  return tagItem;
+                } else if (tagItem && typeof tagItem === 'object') {
+                  return tagItem.tag || tagItem.Tag || '';
+                }
+                return '';
+              })
+              .filter((tag): tag is string => Boolean(tag));
+          } else if (typeof insightTags === 'string') {
+            insightTagValues = [insightTags];
+          }
+          
+          // Also check the single tag field as fallback
+          if (insight.tag) {
+            insightTagValues.push(insight.tag);
+          }
+          if (insight.about) {
+            insightTagValues.push(insight.about);
+          }
+          
+          // Check if any of the insight's tags match any of the allowed tags
+          return insightTagValues.some((tag) => allowedTags.includes(tag));
+        })
+      : data.insights_list;
     
     // Limit to first 3 insights (or all if less than 3)
-    return latestServiceInsights.slice(0, 3).map((insight) => {
+    return filteredInsights.slice(0, 3).map((insight, index) => {
       const creationDate = insight.creation ? new Date(insight.creation) : null;
       const formattedDate = creationDate
         ? creationDate.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
         : "";
+      const title = insight.title || `Insight ${index + 1}`;
+      
+      // Get the first matching tag for display, or fallback to about/tag
+      let displayTag = insight.about || "";
+      if (data?.select_insight_tags && Array.isArray(data.select_insight_tags) && insight.tags) {
+        const allowedTags = data.select_insight_tags
+          .map((item) => item.tag)
+          .filter((tag): tag is string => Boolean(tag));
+        
+        const insightTags = Array.isArray(insight.tags) ? insight.tags : [];
+        const matchingTag = insightTags
+          .map((tagItem) => {
+            if (typeof tagItem === 'string') return tagItem;
+            return tagItem?.tag || tagItem?.Tag || '';
+          })
+          .find((tag) => allowedTags.includes(tag));
+        
+        if (matchingTag) {
+          displayTag = matchingTag;
+        }
+      }
+      
       return {
-        id: insight.name,
+        id: title,
         date: formattedDate,
-        tag: insight.tag || insight.about || "Latest Service",
-        readTime: insight.read_time || "0 min",
-        title: insight.title || insight.name,
+        tag: displayTag,
+        readTime: "0 min",
+        title: title,
         image: getImageUrl(insight.image) || dummyImage,
-        href: `/Insights/${encodeURIComponent(insight.name)}`,
+        href: `/Insights/${encodeURIComponent(title)}`,
       };
     });
-  }, [data?.insights_list]);
+  }, [data?.insights_list, data?.select_insight_tags]);
 
   // Conditionally render based on insights flag
   const shouldShowSection = data?.insights === 1;

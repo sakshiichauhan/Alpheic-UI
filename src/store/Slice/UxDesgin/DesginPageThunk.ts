@@ -3,18 +3,7 @@ import type { RootState } from '../../rootReducer';
 
 // API Response Types
 export interface ServiceCategoryServiceItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
   service?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
 }
 
 type CaseStudyAttachment = { attach?: string };
@@ -63,11 +52,7 @@ export interface CaseStudySlideData {
 }
 
 export interface LinkServiceNameItem {
- 
- 
- 
-  name1?: string;
-  
+  name1?: string;  
   // Merged fields from ServicePage L3 API
   service_category_heading?: string;
   service_category_description?: string;
@@ -77,19 +62,8 @@ export interface LinkServiceNameItem {
 }
 
 export interface ToolsListItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
   tab_name?: string;
   tool?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
   // Merged fields from ToolsWeUse API
   logo_image?: string;
   logo_name?: string;
@@ -97,56 +71,28 @@ export interface ToolsListItem {
 }
 
 export interface FAQsListItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
   title?: string;
   description?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
 }
 
 export interface ConsultantsListItem {
-  name: string;
-  owner?: string;
-  creation?: string;
-  modified?: string;
-  modified_by?: string;
-  docstatus?: number;
-  idx?: number;
   name1?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
   // Merged fields from Consultants API
   attach_image?: string;
   role?: string;
 }
 
 export interface SelectInsightTagItem {
-  name?: string;
   tag?: string;
-  parent?: string;
-  parentfield?: string;
-  parenttype?: string;
-  doctype: string;
 }
 
 export interface DesignInsightItem {
-  name: string;
   title?: string;
   creation?: string;
   image?: string;
-  read_time?: string;
   about?: string;
   tag?: string;
+  tags?: Array<{ tag?: string; Tag?: string } | string>;
 }
 
 export interface DesignPageL2Data {
@@ -485,9 +431,9 @@ export const fetchDesignPageL2Data = createAsyncThunk(
           pageData.consultants_list.map(async (consultantItem: ConsultantsListItem) => {
             try {
               // Fetch consultant details from Consultants API using name1 as the identifier
-              const consultantName = consultantItem.name1 || consultantItem.name;
+              const consultantName = consultantItem.name1;
               if (!consultantName) {
-                console.warn('No name1 or name found for consultants_list item');
+                console.warn('No name1 found for consultants_list item');
                 return consultantItem;
               }
 
@@ -519,7 +465,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
               }
             } catch (error) {
               // If consultant fetch fails, return original item
-              console.warn(`Error fetching consultant details for ${consultantItem.name1 || consultantItem.name}:`, error);
+              console.warn(`Error fetching consultant details for ${consultantItem.name1}:`, error);
               return consultantItem;
             }
           })
@@ -583,16 +529,13 @@ export const fetchDesignPageL2Data = createAsyncThunk(
       // Fetch Insights filtered by select_insight_tags
       if (pageData.select_insight_tags && Array.isArray(pageData.select_insight_tags) && pageData.select_insight_tags.length > 0) {
         try {
-          // Extract tag values from select_insight_tags array and filter to only "Latest Service"
+          // Extract all tag values from select_insight_tags array
           const allTagValues = pageData.select_insight_tags
             .map((item: SelectInsightTagItem) => item.tag)
             .filter((tag: string | undefined): tag is string => Boolean(tag));
 
-          // Filter to only show insights with "Latest Service" tag
-          const tagValues = allTagValues.filter((tag: string) => tag === "Latest Service");
-
-          if (tagValues.length > 0) {
-            console.log('Fetching insights with "Latest Service" tag only');
+          if (allTagValues.length > 0) {
+            console.log(`Fetching insights with tags: ${allTagValues.join(', ')}`);
 
             // Fetch list of all insights
             const insightsListResponse = await fetch('/api/resource/Insights', {
@@ -638,31 +581,37 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                     const detailData = await detailResponse.json();
                     const insightData = detailData.data || detailData;
 
-                    // Check if insight has "Latest Service" tag
+                    // Check if insight has any tag matching select_insight_tags
                     // Tags field is an array of objects with a 'tag' property: [{ tag: "UI model", ... }, ...]
                     const insightTags = insightData.tags || [];
-                    let hasLatestServiceTag = false;
+                    let matchingTag: string | undefined = undefined;
 
+                    // Extract tag values from insight's tags array
+                    let insightTagValues: string[] = [];
                     if (Array.isArray(insightTags)) {
-                      // Check if any tag in the array has tag === "Latest Service"
-                      hasLatestServiceTag = insightTags.some((tagItem: any) => {
-                        // Tags are objects with a 'tag' property: { tag: "UI model", ... }
-                        const tagValue = tagItem?.tag || tagItem?.Tag;
-                        return typeof tagValue === 'string' && tagValue === "Latest Service";
-                      });
+                      insightTagValues = insightTags
+                        .map((tagItem: any) => {
+                          if (typeof tagItem === 'string') {
+                            return tagItem;
+                          }
+                          return tagItem?.tag || tagItem?.Tag || '';
+                        })
+                        .filter((tag: string): tag is string => Boolean(tag));
                     } else if (typeof insightTags === 'string') {
-                      // Single tag string - check if it's "Latest Service"
-                      hasLatestServiceTag = insightTags === "Latest Service";
-                    } else if (insightData.tag) {
-                      // Check tag field directly
-                      hasLatestServiceTag = insightData.tag === "Latest Service";
+                      insightTagValues = [insightTags];
+                    }
+                    
+                    // Also check tag field directly
+                    if (insightData.tag) {
+                      insightTagValues.push(insightData.tag);
                     }
 
-                    if (hasLatestServiceTag) {
-                      // Extract the "Latest Service" tag for display
-                      const latestServiceTag = Array.isArray(insightTags) 
-                        ? insightTags.find((tagItem: any) => (tagItem?.tag || tagItem?.Tag) === "Latest Service")?.tag || "Latest Service"
-                        : "Latest Service";
+                    // Check if any insight tag matches any allowed tag
+                    matchingTag = insightTagValues.find((tag) => allTagValues.includes(tag));
+
+                    if (matchingTag) {
+                      // Use the matching tag for display, or first tag if no match found
+                      const displayTag = matchingTag || (insightTagValues[0] || insightData.about || 'Insights');
 
                       return {
                         name: insightData.name || insightName,
@@ -670,8 +619,9 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                         creation: insightData.creation,
                         image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
                         read_time: insightData.read_time,
-                        about: insightData.about || latestServiceTag || 'Insights',
-                        tag: latestServiceTag,
+                        about: insightData.about || displayTag || 'Insights',
+                        tag: displayTag,
+                        tags: insightTags, // Store the full tags array
                       } as DesignInsightItem;
                     }
 
@@ -679,12 +629,12 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                   })
                 );
 
-                // Filter out null values (insights that didn't have "Latest Service" tag)
+                // Filter out null values (insights that didn't have matching tags)
                 const filteredInsights: DesignInsightItem[] = insightsResult
                   .filter((result) => result.status === 'fulfilled' && result.value !== null)
                   .map((result) => (result as PromiseFulfilledResult<DesignInsightItem>).value);
 
-                console.log(`Found ${filteredInsights.length} insights with "Latest Service" tag`);
+                console.log(`Found ${filteredInsights.length} insights matching tags: ${allTagValues.join(', ')}`);
                 pageData.insights_list = filteredInsights;
               }
             } else {
