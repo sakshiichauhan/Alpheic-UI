@@ -1,18 +1,38 @@
 import { Phone } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store';
+import { fetchDesignPageL2Data } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import { ParsedHtml } from '@/Components/ParsedHtml';
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import ContactModal from '@/Components/PopUp/ContactModal';
 
 const CallToActionBanner = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Static data
-  const heading = "Want to Talk First?";
-  const subheading = "Not ready to submit a full RFP yet? Let's start with a quick discovery chat.";
-  const advertises = "Book a Discovery Call";
-  const subAdvertises = '<div class="ql-editor read-mode"><p>Book with a click a call lasting <strong>15 minutes</strong></p></div>';
-  const buttonText = "Book Now";
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Conditionally render based on card flag
+  const shouldShowSection = data?.card === 1;
+
+  // Use API data if available, otherwise use defaults
+  const heading = data?.card_heading || "Want to Talk First?";
+  const subheading = data?.card_subheading || "Not ready to submit a full RFP yet? Let's start with a quick discovery chat.";
+  const advertises = data?.card_advertises || "Book a Discovery Call";
+  const subAdvertises = data?.card_sub_advertises || '<div class="ql-editor read-mode"><p>Book with a click a call lasting <strong>15 minutes</strong></p></div>';
+  const buttonText = data?.card_buttondata || "Book Now";
+
+  // Don't render if card is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
 
   return (
     <section className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px]">

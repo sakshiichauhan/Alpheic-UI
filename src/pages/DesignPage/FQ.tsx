@@ -1,22 +1,54 @@
-import React, { useId, useState, useRef, useEffect } from "react";
+import React, { useId, useState, useRef, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchDesignPageL2Data, type FAQsListItem } from "@/store/Slice/UxDesgin/DesginPageThunk";
 import { ParsedHtml } from "@/Components/ParsedHtml";
 import { ChevronDown } from "lucide-react";
 
 type FaqItem = { q: string; a: string };
 
 const FAQSection: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
   const [openIndex, setOpenIndex] = useState<number | null>(null); // all closed
 
-  // Default heading
-  const heading = '<div class="ql-editor read-mode"><p>Frequently Asked <strong>Questions</strong></p></div>';
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
 
-  // FAQ data
-  const faqs: FaqItem[] = [
-    { q: "How do you approach UX/UI design?", a: "We begin with user research, mapping goals, and creating wireframes before crafting visuals and validating with user testing." },
-    { q: "Can you revamp our existing app?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
-    { q: "Do you handle both design and development?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
-    { q: "How secure is the data handled by AI Agents?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
-  ];
+  // Conditionally render based on faqs flag
+  const shouldShowSection = data?.faqs === 1;
+
+  // Use API data if available, otherwise use defaults
+  const heading = data?.faqs_heading || '<div class="ql-editor read-mode"><p>Frequently Asked <strong>Questions</strong></p></div>';
+
+  // Convert faqs_list to FaqItem format
+  const faqs: FaqItem[] = useMemo(() => {
+    if (data?.faqs_list && data.faqs_list.length > 0) {
+      return data.faqs_list
+        .filter((item: FAQsListItem) => item.title && item.description)
+        .map((item: FAQsListItem) => ({
+          q: item.title || '',
+          a: item.description || '',
+        }));
+    }
+    
+    // Fallback to dummy data
+    return [
+      { q: "How do you approach UX/UI design?", a: "We begin with user research, mapping goals, and creating wireframes before crafting visuals and validating with user testing." },
+      { q: "Can you revamp our existing app?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
+      { q: "Do you handle both design and development?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
+      { q: "How secure is the data handled by AI Agents?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
+    ];
+  }, [data?.faqs_list]);
+
+  // Don't render if faqs is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
 
   return (
     <section className="mx-auto px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]

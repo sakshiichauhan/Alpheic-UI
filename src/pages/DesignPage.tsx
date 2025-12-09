@@ -46,8 +46,8 @@ import DesignPractice from "@/pages/DesignPage/DesignPractice"
 import ToolsSection from "@/pages/DesignPage/ToolsSection"
 import Table from "@/pages/DesignPage/Table"
 import Insights from "@/pages/DesignPage/Insights"
-import CallToActionBanner from "@/pages/ContractUsFinal/CallToActionBanner"
-import FrequentlyAskedQuestions from "@/pages/CareerPage/frequentlyAskedQuestions"
+import CallToActionBanner from "@/pages/DesignPage/CallToBanner"
+import FrequentlyAskedQuestions from "@/pages/DesignPage/FQ"
 import DesignExpert from "@/pages/Services/DesignExpert"
 
 
