@@ -52,7 +52,7 @@ const convertBrandsToItems = (brands?: ServiceBrandListItem[]): Item[] => {
     .filter((brand) => brand.attach_logo) // Only include brands with logos
     .map((brand) => ({
       src: getImageUrl(brand.attach_logo),
-      alt: brand.brand_name || brand.name1 || brand.name || "Client logo",
+      alt: brand.brand_name || brand.name1 || '',
     }));
 };
 

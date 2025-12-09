@@ -77,7 +77,7 @@ const convertConsultantsToExperts = (
         src: consultantItem.attach_image 
           ? getImageUrl(consultantItem.attach_image)
           : (index < 7 ? [Img1, Img2, Img3, Img4, Img5, Img6, Img7][index] : Img1),
-        name: consultantItem.name1 || consultantItem.name || `Consultant ${index + 1}`,
+        name: consultantItem.name1,
         title: consultantItem.role || 'Design Expert',
         isHighlighted: index === 0, // Highlight first consultant by default
       };
