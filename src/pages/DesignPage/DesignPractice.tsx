@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -109,10 +109,26 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
   }, [gallery, imageSrc, imageAlt, overlay?.logoLabel, overlay?.headline, overlay?.description]);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const dotRef = useRef<HTMLButtonElement>(null);
+  const [dotHeight, setDotHeight] = useState(10); // Default height
 
   useEffect(() => {
     setActiveIndex(0);
   }, [slides.length]);
+
+  useEffect(() => {
+    // Measure the actual height of a dot element
+    const updateDotHeight = () => {
+      if (dotRef.current) {
+        const height = dotRef.current.offsetHeight;
+        setDotHeight(height);
+      }
+    };
+
+    updateDotHeight();
+    window.addEventListener('resize', updateDotHeight);
+    return () => window.removeEventListener('resize', updateDotHeight);
+  }, []);
 
   const slideCount = slides.length;
   const currentSlide = slides[activeIndex];
@@ -163,7 +179,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
       </div>
 
       {/* --- Image Column  --- */}
-      <div className={`relative ${imageOrder} h-full w-full overflow-hidden bg-gray-100 xl:min-h-[557px] min-h-[277px]`}>
+      <div className={`relative ${imageOrder} h-full w-full overflow-hidden bg-gray-100 xl:min-h-[557px] lg:min-h-[450px] md:min-h-[350px] min-h-[277px] xl:max-h-[557px] lg:max-h-[450px] md:max-h-[350px] max-h-[277px]`}>
         <div className="relative h-full w-full">
           <AnimatePresence mode="wait">
             <motion.img
@@ -213,27 +229,33 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
         )}
 
         {/* Gradient with blur */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-fit min-h-[110px] md:min-h-[130px] xl:min-h-[170px] bg-gradient-to-t from-black/85 via-black/50 to-transparent backdrop-blur-md" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-fit min-h-[90px] md:min-h-[130px] xl:min-h-[170px] bg-gradient-to-t from-black/85 via-black/50 to-transparent backdrop-blur-md" />
 
         {/* Container for Dots + Text Content */}
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-[10px] xl:p-6 md:p-4 p-2">
 
           {/* --- 2. Carousel Dots (MOVED & FIXED) --- */}
           {slideCount > 1 && (
-            <div className="z-10 flex gap-3">
-              {slides.map((_, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => handleDotClick(index)}
-                  className="h-[10px] rounded-full bg-white/40 transition-colors hover:bg-white/60" // Base style
-                  animate={{
-                    width: index === activeIndex ? 42 : 10, // <-- FIXED: inactive width is 10 (to match h-10)
-                    backgroundColor: index === activeIndex ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.4)',
-                  }}
-                  transition={{ duration: 0.3 }}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
+            <div className=" z-10 flex gap-3">
+              {slides.map((_, index) => {
+                const inactiveWidth = dotHeight; // Match height when inactive
+                const activeWidth = dotHeight * 4.2; // 4.2x height when active (maintains similar ratio to original 42/10)
+                
+                return (
+                  <motion.button
+                    key={index}
+                    ref={index === 0 ? dotRef : undefined}
+                    onClick={() => handleDotClick(index)}
+                    className="sm:h-[8px] sm:w-[8px] h-[6px] w-[6px] lg:h-[10px] lg:w-[10px] rounded-full bg-white/40 transition-colors hover:bg-white/60" // Base style
+                    animate={{
+                      width: index === activeIndex ? activeWidth : inactiveWidth,
+                      backgroundColor: index === activeIndex ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.4)',
+                    }}
+                    transition={{ duration: 0.3 }}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                );
+              })}
             </div>
           )}
 
@@ -241,7 +263,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
           <div className="flex w-full flex-col gap-6 md:flex-row md:items-center md:justify-between">
             {/* Left Side: Logo + Text */}
             <div className="flex w-full items-center gap-4 md:w-auto">
-              <div className="flex xl:h-[96px] md:h-[72px] h-[50px] xl:min-w-[111px] md:min-w-[75px] min-w-[50px] flex-none items-center justify-center bg-white/95">
+              <div className="flex xl:h-[100px] md:h-[80px] h-[50px] xl:min-w-[111px] md:min-w-[75px] min-w-[50px] flex-none items-center justify-center bg-white/95">
                 <img src={Amber} alt="Amber" className="h-full w-full object-contain" />
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -269,7 +291,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
                         </h3>
                       );
                     })()}
-                    <p className="text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px] 2xl:text-[20px] font-urbanist text-[#EEEEEE] line-clamp-2">
+                    <p className="text-[12px] md:text-[14px] lg:text-[16px] xl:text-[18px] 2xl:text-[20px] font-urbanist text-[#EEEEEE] md:line-clamp-2 line-clamp-1">
                       {descriptionText}
                     </p>
                   </motion.div>
@@ -351,8 +373,8 @@ const DesignPractice: React.FC = () => {
         // Alternate image position: even index = right, odd index = left
         const imagePosition: ImagePosition = index % 2 === 0 ? 'right' : 'left';
         
-        // Create gallery from ALL case study slides - ALL FROM CASE STUDY API
-        const gallery: SlideItem[] = validSlides.map((slide) => {
+        // Create gallery from case study slides - LIMITED TO 4 ITEMS
+        const gallery: SlideItem[] = validSlides.slice(0, 4).map((slide) => {
           console.log(`DesignPractice: Creating slide for "${slide.full_title}":`, {
             firstAttachment: slide.first_attachment,
             attachmentType: typeof slide.first_attachment,
@@ -368,10 +390,11 @@ const DesignPractice: React.FC = () => {
           };
         });
         
-        console.log(`DesignPractice: Item ${index} - Created card with ${validSlides.length} case study slide(s):`, {
+        console.log(`DesignPractice: Item ${index} - Created card with ${gallery.length} case study slide(s) (limited to 4):`, {
           title: item.name1,
-          slidesCount: validSlides.length,
-          slugs: validSlides.map(s => s.case_study_slug),
+          slidesCount: gallery.length,
+          totalValidSlides: validSlides.length,
+          slugs: validSlides.slice(0, 4).map(s => s.case_study_slug),
           galleryImages: gallery.map(g => g.image)
         });
 
@@ -381,9 +404,9 @@ const DesignPractice: React.FC = () => {
           description: item.service_category_description, // From link_service_names
           services: getServices(item), // From ServicePage L3
           imagePosition,
-          gallery, // From CaseStudy API - can have multiple slides
+          gallery, // From CaseStudy API - LIMITED TO 4 ITEMS
           caseStudySlug: validSlides[0]?.case_study_slug, // First case study slug for backward compatibility
-          caseStudySlugs: validSlides.map(slide => slide.case_study_slug || '').filter(Boolean), // All case study slugs for current slide linking
+          caseStudySlugs: validSlides.slice(0, 4).map(slide => slide.case_study_slug || '').filter(Boolean), // Limited to 4 case study slugs for current slide linking
         };
       })
       .filter((card): card is NonNullable<typeof card> => card !== null);

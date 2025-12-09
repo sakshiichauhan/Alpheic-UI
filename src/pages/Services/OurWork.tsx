@@ -312,7 +312,7 @@ const ProjectCard = ({ category, title, subtitle, bgColor, image, link }: Projec
             <img
               src={image}
               alt={title}
-              className="2xl:w-full 2xl:h-full w-full h-[202px] object-cover"
+              className="w-full lg:h-[202px] 2xl:h-[250px] h-[180px] object-cover"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 // Hide image on error and show fallback
@@ -320,14 +320,14 @@ const ProjectCard = ({ category, title, subtitle, bgColor, image, link }: Projec
                 const parent = (e.target as HTMLImageElement).parentElement;
                 if (parent && !parent.querySelector('.image-fallback')) {
                   const fallback = document.createElement('div');
-                  fallback.className = 'w-full h-[202px] bg-gray-200 flex items-center justify-center image-fallback';
+                  fallback.className = 'w-full lg:h-[202px] 2xl:h-[250px] h-[180px] bg-gray-200 flex items-center justify-center image-fallback';
                   fallback.innerHTML = '<span class="text-gray-400 text-sm">No image</span>';
                   parent.appendChild(fallback);
                 }
               }}
             />
           ) : (
-            <div className="w-full h-[202px] bg-gray-200 flex items-center justify-center">
+            <div className="w-full lg:h-[202px] 2xl:h-[250px] h-[180px] bg-gray-200 flex items-center justify-center">
               <span className="text-gray-400 text-sm">No image</span>
             </div>
           )}
