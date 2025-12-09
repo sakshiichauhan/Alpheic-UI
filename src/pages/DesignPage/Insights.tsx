@@ -1,7 +1,21 @@
-
+import { useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import dummyImage from "@/assets/dummy.png";
 import { DefaultButton } from "@/Components/Button";
-import ParsedHtml from "@/Components/ParsedHtml";
+
+// Normalize API file paths to absolute URLs
+const getImageUrl = (path?: string | null) => {
+  if (!path) return "";
+  const trimmed = path.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("/files/")) return `https://work.alpheric.com${trimmed}`;
+  if (!trimmed.startsWith("/")) return `https://work.alpheric.com/files/${trimmed}`;
+  return `https://work.alpheric.com${trimmed}`;
+};
 
 type Post = {
   id: string;
@@ -13,34 +27,10 @@ type Post = {
   href?: string;
 };
 
-const POSTS: Post[] = [
-  {
-    id: "1",
-    date: "07 Apr",
-    tag: "Product Updates",
-    readTime: "6min",
-    title: "Will Zero UI Replace Screen-Based Interface? The Designer's Verdict",
-    image: dummyImage,
-  },
-  {
-    id: "2",
-    date: "07 Apr",
-    tag: "Product Updates",
-    readTime: "6min",
-    title: "Will Zero UI Replace Screen-Based Interface? The Designer's Verdict",
-    image: dummyImage,
-  },
-  {
-    id: "3",
-    date: "07 Apr",
-    tag: "Product Updates",
-    readTime: "6min",
-    title: "Will Zero UI Replace Screen-Based Interface? The Designer's Verdict",
-    image: dummyImage,
-  },
-];
-
 function PostCard({ post }: { post: Post }) {
+    // Always include read time if available, otherwise show default
+    const readTimeDisplay = post.readTime || "0 min";
+    const metaParts = [post.date, post.tag, readTimeDisplay].filter(Boolean);
     return (
       <a href={post.href ?? "#"} className="group focus:outline-none lg:w-[470px] w-full">
         <div className="flex flex-col gap-[48px]">
@@ -52,6 +42,7 @@ function PostCard({ post }: { post: Post }) {
               alt={post.title}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
   
             
@@ -66,7 +57,7 @@ function PostCard({ post }: { post: Post }) {
           {/* bottom-left meta (no bg, uses shadow for contrast) */}
           <div className="pointer-events-none absolute left-4 bottom-3 z-20">
             <div className="text-white xl:text-[16px] lg:text-[14px] text-[12px] font-medium [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
-              {post.date} · {post.tag} · {post.readTime}
+              {metaParts.join(" · ")}
             </div>
           </div>
         </div>
@@ -86,13 +77,66 @@ function PostCard({ post }: { post: Post }) {
   
   
   
+
 interface InsightsProps {
-  heading?: string;
-  description?: string;
   buttonData?: string;
 }
 
-export default function Insights({ heading, description, buttonData }: InsightsProps) {
+export default function Insights({ buttonData }: InsightsProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading, error } = useSelector((state: RootState) => state.designPageL2);
+
+  useEffect(() => {
+    // Fetch data if not already loaded
+    if (!data && !loading) {
+      dispatch(fetchDesignPageL2Data());
+    }
+  }, [dispatch, data, loading]);
+
+  // Convert insights_list to Post format, filtering to only show "Latest Service" tag
+  const posts: Post[] = useMemo(() => {
+    if (!data?.insights_list || data.insights_list.length === 0) {
+      return [];
+    }
+    
+    // Filter to only show insights with "Latest Service" tag
+    const latestServiceInsights = data.insights_list.filter((insight) => {
+      // Check if the tag is "Latest Service"
+      return insight.tag === "Latest Service" || insight.about === "Latest Service";
+    });
+    
+    // Limit to first 3 insights (or all if less than 3)
+    return latestServiceInsights.slice(0, 3).map((insight) => {
+      const creationDate = insight.creation ? new Date(insight.creation) : null;
+      const formattedDate = creationDate
+        ? creationDate.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
+        : "";
+      return {
+        id: insight.name,
+        date: formattedDate,
+        tag: insight.tag || insight.about || "Latest Service",
+        readTime: insight.read_time || "0 min",
+        title: insight.title || insight.name,
+        image: getImageUrl(insight.image) || dummyImage,
+        href: `/Insights/${encodeURIComponent(insight.name)}`,
+      };
+    });
+  }, [data?.insights_list]);
+
+  // Conditionally render based on insights flag
+  const shouldShowSection = data?.insights === 1;
+
+  // Use API data for heading and button
+  const heading = data?.insights_heading;
+  const buttonText = buttonData || data?.insights_buttondata || "View All Insights";
+
+  // Don't render if insights is 0
+  if (data && !shouldShowSection) {
+    return null;
+  }
+
+  const isLoading = loading;
+
   return (
     <section className="w-full">
         <div className="flex flex-col gap-[32px]">
@@ -109,28 +153,28 @@ export default function Insights({ heading, description, buttonData }: InsightsP
                 Design <span className="md:font-semibold">insights</span>
               </h2>
             )}
-            {description ? (
-              <ParsedHtml
-                htmlContent={description}
-                as="p"
-                className="text-center text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist"
-              />
-            ) : (
-              <p className="text-center text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist">
-                Explore thoughts and trends shaping the future of digital experience:
-              </p>
-            )}
 
             {/* Cards */}
-            <div className="flex w-full lg:flex-row flex-col justify-center 2xl:gap-[48px] xl:gap-[40px] gap-[24px]">
-              {POSTS.map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
-            </div> 
+            {error && (
+              <div className="text-center text-red-500 text-sm mb-4">{error}</div>
+            )}
+            {isLoading && (
+              <div className="text-center text-[#3E3E3E] text-sm mb-4">Loading insights...</div>
+            )}
+            {!isLoading && posts.length === 0 && (
+              <div className="text-center text-[#3E3E3E] text-sm mb-4">No insights found.</div>
+            )}
+            {!isLoading && posts.length > 0 && (
+              <div className="flex w-full lg:flex-row flex-col justify-center 2xl:gap-[48px] xl:gap-[40px] gap-[24px]">
+                {posts.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))}
+              </div>
+            )}
           </div>
           <div className="lg:flex w-full items-center justify-center hidden">
-              <DefaultButton href="#" onClick={() => {}}>
-                {buttonData || "View All Insights"}
+              <DefaultButton href="/Insights" onClick={() => {}}>
+                {buttonText}
               </DefaultButton>
           </div>
         </div>

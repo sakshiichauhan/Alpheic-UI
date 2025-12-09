@@ -130,6 +130,25 @@ export interface ConsultantsListItem {
   role?: string;
 }
 
+export interface SelectInsightTagItem {
+  name?: string;
+  tag?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype: string;
+}
+
+export interface DesignInsightItem {
+  name: string;
+  title?: string;
+  creation?: string;
+  image?: string;
+  read_time?: string;
+  about?: string;
+  tag?: string;
+}
+
 export interface DesignPageL2Data {
   service_category: number;
   service_category_smalltitle: string;
@@ -150,6 +169,7 @@ export interface DesignPageL2Data {
   insights?: number;
   insights_heading?: string;
   insights_buttondata?: string;
+  select_insight_tags?: SelectInsightTagItem[];
   consultants?: number;
   consultants_heading?: string;
   consultants_subheading?: string;
@@ -165,6 +185,7 @@ export interface DesignPageL2Data {
   tools_list?: ToolsListItem[];
   faqs_list?: FAQsListItem[];
   consultants_list?: ConsultantsListItem[];
+  insights_list?: DesignInsightItem[];
 }
 
 interface DesignPageL2State {
@@ -557,6 +578,123 @@ export const fetchDesignPageL2Data = createAsyncThunk(
 
         // Update pageData with enriched tools_list
         pageData.tools_list = enrichedToolsList;
+      }
+
+      // Fetch Insights filtered by select_insight_tags
+      if (pageData.select_insight_tags && Array.isArray(pageData.select_insight_tags) && pageData.select_insight_tags.length > 0) {
+        try {
+          // Extract tag values from select_insight_tags array and filter to only "Latest Service"
+          const allTagValues = pageData.select_insight_tags
+            .map((item: SelectInsightTagItem) => item.tag)
+            .filter((tag: string | undefined): tag is string => Boolean(tag));
+
+          // Filter to only show insights with "Latest Service" tag
+          const tagValues = allTagValues.filter((tag: string) => tag === "Latest Service");
+
+          if (tagValues.length > 0) {
+            console.log('Fetching insights with "Latest Service" tag only');
+
+            // Fetch list of all insights
+            const insightsListResponse = await fetch('/api/resource/Insights', {
+              method: 'GET',
+              headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (insightsListResponse.ok) {
+              const insightsListData = await insightsListResponse.json();
+              const insightsList: Array<{ name: string }> = Array.isArray(insightsListData.data)
+                ? insightsListData.data
+                : Array.isArray(insightsListData)
+                ? insightsListData
+                : [];
+
+              if (insightsList.length > 0) {
+                // Fetch details for each insight and filter by tags
+                const insightsResult = await Promise.allSettled(
+                  insightsList.map(async (item) => {
+                    const insightName = item.name;
+                    if (!insightName) {
+                      throw new Error('Insight name is missing');
+                    }
+
+                    const detailResponse = await fetch(
+                      `/api/resource/Insights/${encodeURIComponent(insightName)}`,
+                      {
+                        method: 'GET',
+                        headers: {
+                          'Authorization': `token ${token}`,
+                          'Content-Type': 'application/json',
+                        },
+                      }
+                    );
+
+                    if (!detailResponse.ok) {
+                      throw new Error(`Failed to fetch insight ${insightName}`);
+                    }
+
+                    const detailData = await detailResponse.json();
+                    const insightData = detailData.data || detailData;
+
+                    // Check if insight has "Latest Service" tag
+                    // Tags field is an array of objects with a 'tag' property: [{ tag: "UI model", ... }, ...]
+                    const insightTags = insightData.tags || [];
+                    let hasLatestServiceTag = false;
+
+                    if (Array.isArray(insightTags)) {
+                      // Check if any tag in the array has tag === "Latest Service"
+                      hasLatestServiceTag = insightTags.some((tagItem: any) => {
+                        // Tags are objects with a 'tag' property: { tag: "UI model", ... }
+                        const tagValue = tagItem?.tag || tagItem?.Tag;
+                        return typeof tagValue === 'string' && tagValue === "Latest Service";
+                      });
+                    } else if (typeof insightTags === 'string') {
+                      // Single tag string - check if it's "Latest Service"
+                      hasLatestServiceTag = insightTags === "Latest Service";
+                    } else if (insightData.tag) {
+                      // Check tag field directly
+                      hasLatestServiceTag = insightData.tag === "Latest Service";
+                    }
+
+                    if (hasLatestServiceTag) {
+                      // Extract the "Latest Service" tag for display
+                      const latestServiceTag = Array.isArray(insightTags) 
+                        ? insightTags.find((tagItem: any) => (tagItem?.tag || tagItem?.Tag) === "Latest Service")?.tag || "Latest Service"
+                        : "Latest Service";
+
+                      return {
+                        name: insightData.name || insightName,
+                        title: insightData.title || insightData.name,
+                        creation: insightData.creation,
+                        image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
+                        read_time: insightData.read_time,
+                        about: insightData.about || latestServiceTag || 'Insights',
+                        tag: latestServiceTag,
+                      } as DesignInsightItem;
+                    }
+
+                    return null;
+                  })
+                );
+
+                // Filter out null values (insights that didn't have "Latest Service" tag)
+                const filteredInsights: DesignInsightItem[] = insightsResult
+                  .filter((result) => result.status === 'fulfilled' && result.value !== null)
+                  .map((result) => (result as PromiseFulfilledResult<DesignInsightItem>).value);
+
+                console.log(`Found ${filteredInsights.length} insights with "Latest Service" tag`);
+                pageData.insights_list = filteredInsights;
+              }
+            } else {
+              console.warn('Failed to fetch insights list');
+            }
+          }
+        } catch (error) {
+          // If insights fetch fails, continue with existing data
+          console.warn('Error fetching insights by tags:', error);
+        }
       }
 
       return pageData;
