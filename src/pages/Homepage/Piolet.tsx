@@ -2,10 +2,10 @@ import { motion, useScroll, useTransform, } from "framer-motion";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 
-import photo1 from "@/assets/Pilot_assets/i.png";
-import photo2 from "@/assets/Pilot_assets/ii.png";
-import photo3 from "@/assets/Pilot_assets/iii.png";
-// import photo4 from "@/assets/Pilot_assets/iv.png";
+import photo1 from "@/assets/Pilot_assets/one.png";
+import photo2 from "@/assets/Pilot_assets/two.png";
+import photo3 from "@/assets/Pilot_assets/three.png";
+import photo4 from "@/assets/Pilot_assets/four.png";
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import { ArrowUpRight } from "lucide-react";
 
@@ -55,7 +55,7 @@ const CARDS: PilotCard[] = [
     title: "Pilot for Enterprises",
     subtitle: "For established organizations seeking transformation and innovation.",
     gradient: "bg-gradient-to-b from-[#01C9DF] to-[#678DFE]",
-    bigImg: photo1,
+    bigImg: photo4,
     duration: "8 weeks",
     tags: ["Consulting" , "Infrastructure" , "Security" , "AI" , "Integration"],
   },
@@ -124,7 +124,7 @@ function PilotCardView({ card }: { card: PilotCard }) {
             <img
               src={card.bigImg}
               alt=""
-              className="pointer-events-none  z-[2] h-auto w-[580px] shrink-0  object-contain object-top"
+              className="pointer-events-none  z-[2] 2xl:max-w-[521px] 2xl:max-h-[417px] xl:max-w-[421px] xl:max-h-[317px] lg:max-w-[351px] lg:max-h-[247px] md:max-w-[221px] md:max-h-[117px] max-w-[100px] max-h-[80px] shrink-0  object-cover object-bottom"
             />
           )}
             </div>

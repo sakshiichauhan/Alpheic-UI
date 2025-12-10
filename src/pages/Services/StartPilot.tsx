@@ -1,4 +1,4 @@
-import photo1 from "@/assets/Pilot_assets/i.png";
+import photo1 from "@/assets/Pilot_assets/one.png";
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import { ArrowUpRight } from "lucide-react";
 import ParsedHtml from "@/Components/ParsedHtml";
