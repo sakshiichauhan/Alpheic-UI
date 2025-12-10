@@ -1,6 +1,6 @@
 import IndustriesSection from "@/pages/Industries/IndustriesSection";
 import IndustriesHero from "@/pages/Industries/IndustriesHero";
-import LetsTalk from "@/pages/Services/LetsTalk";
+import LetsTalk from "@/pages/Industries/LetsTalk";
 
 export const Industries = () => {
   return (

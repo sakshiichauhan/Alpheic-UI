@@ -7,6 +7,7 @@ export interface LatestInsight {
   creation?: string;
   image?: string;
   read_time?: string;
+  read?: string;
   about?: string;
 }
 
@@ -93,6 +94,7 @@ export const fetchLatestInsights = createAsyncThunk(
             creation: insightData.creation,
             image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
             read_time: insightData.read_time,
+            read: insightData.read || insightData.read_time,
             about: insightData.about || insightData.tag || 'Insights',
           } as LatestInsight;
         })

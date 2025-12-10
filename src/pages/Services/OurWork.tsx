@@ -12,9 +12,26 @@ import linkedin from "@/assets/logo/linkdin.png";
 import dribbble from "@/assets/logo/dribble.png";
 import behance from "@/assets/logo/behance.png";
 
-// Helper function to convert API attachment path to full URL
+// Helper function to check if file is an image
+const isImageFile = (attachPath: string | undefined | null): boolean => {
+  if (!attachPath || typeof attachPath !== 'string') {
+    return false;
+  }
+  
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico'];
+  const lowerPath = attachPath.toLowerCase();
+  
+  return imageExtensions.some(ext => lowerPath.endsWith(ext));
+};
+
+// Helper function to convert API attachment path to full URL (only for images)
 const getImageUrl = (attachPath: string | undefined | null): string => {
   if (!attachPath || typeof attachPath !== 'string' || attachPath.trim() === '') {
+    return "";
+  }
+  
+  // Only process image files
+  if (!isImageFile(attachPath)) {
     return "";
   }
   
@@ -390,6 +407,7 @@ function SocialCta() {
                   alt={name}
                   className="h-auto w-[32px] sm:w-[48px] lg:w-[72px] object-contain"
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                 />
               <span className="hidden md:block text-[16px] lg:text-[20px] font-regular text-black ">{name}</span>
             </a>

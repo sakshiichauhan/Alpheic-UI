@@ -1,4 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/store';
+import { fetchIndustryL2Data } from '@/store/Slice/IndustryPage/TechnologyPageThunk';
+import { ParsedHtml } from "@/Components/ParsedHtml";
 
 // --- 1. Reusable Stat Component ---
 // This makes the layout cleaner and easier to manage
@@ -18,22 +23,43 @@ const StatItem: React.FC<{ value: string; description: string }> = ({
 
 // --- 2. Main Experience Section Component ---
 interface OurExperienceProps {
-  experience?: string;
-  experienceCards?: Array<{ exp_head?: string; exp_desc?: string }>;
-  loading?: boolean;
+  className?: string;
 }
 
 const OurExperience: React.FC<OurExperienceProps> = ({ 
-  experience,
-  experienceCards = [],
-  loading = false
+  className = ""
 }) => {
+  const { industryName } = useParams<{ industryName?: string }>();
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.technologyPage);
+
+  // Get industry name from route or use default
+  const currentIndustry = industryName ? decodeURIComponent(industryName) : "Energy & Environment";
+
+  useEffect(() => {
+    // Fetch industry data on component mount
+    if (!data || data.name !== currentIndustry) {
+      if (!loading) {
+        dispatch(fetchIndustryL2Data(currentIndustry));
+      }
+    }
+  }, [dispatch, data, loading, currentIndustry]);
+
+  // Check flag - if 0, don't render
+  if (data && data.industry_experience !== 1) {
+    return null;
+  }
+
+  const heading = data?.industry_experience_heading;
+  const description = data?.industry_experience_description;
+  const experienceCards = data?.industry_experience_highlights || [];
   return (
     <section
-      className="
+      className={`
         w-full relative overflow-clip
         lg:bg-[radial-gradient(ellipse_50%_100%_at_top_right,#EDE6FE_10%,#FFFFFF_100%)]
-        "
+        ${className}
+      `}
     >
       {/* Container with responsive padding */}
       <div
@@ -43,9 +69,17 @@ const OurExperience: React.FC<OurExperienceProps> = ({
         "
       >
         {/* Main Title */}
-        <h1 className="xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[40px] text-[32px] font-semibold text-black">
-          Our Experience
-        </h1>
+        {heading ? (
+          <ParsedHtml
+            htmlContent={heading}
+            as="h1"
+            className="xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[40px] text-[32px] font-semibold text-black"
+          />
+        ) : (
+          <h1 className="xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[40px] text-[32px] font-semibold text-black">
+            Our Experience
+          </h1>
+        )}
 
         {/* Stats Grid - Dynamic based on API data */}
         {loading ? (
@@ -75,24 +109,24 @@ const OurExperience: React.FC<OurExperienceProps> = ({
                 )}
                 <StatItem
                   value={card.exp_head || ''}
-                  description={card.exp_desc || ''}
+                  description={card.exp_description || ''}
                 />
               </React.Fragment>
             ))}
           </div>
         ) : null}
 
-        {/* Paragraphs Section - Dynamic from experience field */}
+        {/* Paragraphs Section - Dynamic from description field */}
         {loading ? (
           <div className="mt-10 md:mt-12 flex flex-col gap-4">
             {[1, 2, 3, 4, 5].map((index) => (
               <div key={index} className="xl:h-[24px] lg:h-[20px] md:h-[18px] h-[16px] bg-gray-200 rounded animate-pulse"></div>
             ))}
           </div>
-        ) : experience ? (
+        ) : description ? (
           <div className="mt-10 md:mt-12 flex flex-col text-[var(--medium-text)] xl:text-[24px] lg:text-[20px] md:text-[18px] text-[16px] font-urbanist">
-            {/* Split experience text by newlines and render as paragraphs */}
-            {experience.split('\n').filter(para => para.trim()).map((paragraph, index) => (
+            {/* Split description text by newlines and render as paragraphs */}
+            {description.split('\n').filter(para => para.trim()).map((paragraph, index) => (
               <p key={index}>
                 {paragraph.trim()}
               </p>

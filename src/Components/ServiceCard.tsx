@@ -25,6 +25,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ title, description, href = "#
                   src={iconUrl} 
                   alt={title} 
                   className="h-8 w-8 object-contain"
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     console.error('Image failed to load:', iconUrl);
                     (e.target as HTMLImageElement).style.display = 'none';

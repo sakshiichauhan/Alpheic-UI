@@ -66,6 +66,7 @@ function AppRoutes() {
         <Route path="/thank-you/:type" element={<ThankYouWrapper />} />
         <Route path="/thank-you" element={<ThankYouWrapper />} />
         <Route path="/Technology" element={<Technology />} />
+        <Route path="/industry/:industryName" element={<Technology />} />
       
         <Route path="/Dreamers" element={<Dreamers />} />
         <Route path="/start-pilot" element={<StartPilotForm />} />

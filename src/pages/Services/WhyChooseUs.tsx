@@ -10,24 +10,29 @@ interface FeatureCardProps {
 
 // Helper function to construct image URL from API path
 const getImageUrl = (imagePath?: string): string => {
-  if (!imagePath) return Sparkle;
+  if (!imagePath || typeof imagePath !== 'string' || imagePath.trim() === '') {
+    return Sparkle;
+  }
+  
+  const trimmedPath = imagePath.trim();
   
   // If it's already a full URL, return as-is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+  if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+    return trimmedPath;
   }
   
-  // If it starts with /files/, use the path directly
-  // The server/proxy should handle routing this to the correct location
-  if (imagePath.startsWith('/files/')) {
-    // Use relative path - works if proxy is set up or files are on same domain
-    // Can be extended later to use full URL if needed
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith('/files/')) {
+    return `https://work.alpheric.com${trimmedPath}`;
   }
   
-  // Fallback to default icon if path is invalid
-  return Sparkle;
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith('/')) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
 };
 
 const FeatureCard = ({ title, description, attachImage }: FeatureCardProps) => {
@@ -40,6 +45,7 @@ const FeatureCard = ({ title, description, attachImage }: FeatureCardProps) => {
         src={imageUrl} 
         alt={title || "Feature icon"} 
         className={`2xl:w-8 2xl:h-8 w-6 h-6 ${isDefaultIcon ? '' : 'object-contain'}`}
+        referrerPolicy="no-referrer"
         onError={(e) => {
           // Fallback to default icon if image fails to load
           const target = e.target as HTMLImageElement;

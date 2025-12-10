@@ -114,7 +114,7 @@ export default function LatestInsights() {
         id: insight.name,
         date: formattedDate,
         about: insight.about || "Insights",
-        readTime: insight.read_time || "0 min",
+        readTime: insight.read || "0 min",
         title: insight.title || insight.name,
         image: getImageUrl(insight.image) || dummyImage,
         href: `/Insights/${encodeURIComponent(insight.name)}`,

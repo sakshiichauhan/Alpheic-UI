@@ -7,21 +7,29 @@ import type { ServiceHireCard } from "@/store/Slice/UxDesgin/UxDesgin";
 
 // Helper function to construct image URL from API path
 const getImageUrl = (imagePath?: string): string => {
-  if (!imagePath) return lightning;
+  if (!imagePath || typeof imagePath !== 'string' || imagePath.trim() === '') {
+    return lightning;
+  }
+  
+  const trimmedPath = imagePath.trim();
   
   // If it's already a full URL, return as-is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+  if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+    return trimmedPath;
   }
   
-  // If it starts with /files/, use the path directly
-  if (imagePath.startsWith('/files/')) {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    return apiBaseUrl ? `${apiBaseUrl}${imagePath}` : imagePath;
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith('/files/')) {
+    return `https://work.alpheric.com${trimmedPath}`;
   }
   
-  // Fallback to default icon if path is invalid
-  return lightning;
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith('/')) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
 };
 
 const WhatWeOffer: React.FC<{ className?: string; heading?: string; cards?: ServiceHireCard[]; buttonData?: string }> = ({ 

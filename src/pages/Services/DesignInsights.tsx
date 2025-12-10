@@ -156,7 +156,7 @@ export default function DesignInsights({ heading, description, buttonData }: Des
         id: title,
         date: formattedDate,
         tag: insight.about || "",
-        readTime: insight.read_time || "0 min",
+        readTime: insight.read || "0 min",
         title: title,
         image: getImageUrl(insight.image) || dummyImage,
         href: `/Insights/${encodeURIComponent(title)}`,

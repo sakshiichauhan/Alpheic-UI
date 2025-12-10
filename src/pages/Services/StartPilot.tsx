@@ -3,6 +3,33 @@ import baground1 from "@/assets/Pilot_assets/bg.png";
 import { ArrowUpRight } from "lucide-react";
 import ParsedHtml from "@/Components/ParsedHtml";
 
+// Helper function to construct image URL from API path
+const getImageUrl = (imagePath?: string): string => {
+  if (!imagePath || typeof imagePath !== 'string' || imagePath.trim() === '') {
+    return photo1;
+  }
+  
+  const trimmedPath = imagePath.trim();
+  
+  // If it's already a full URL, return as-is
+  if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+    return trimmedPath;
+  }
+  
+  // If it starts with /files/, construct the full URL
+  if (trimmedPath.startsWith('/files/')) {
+    return `https://work.alpheric.com${trimmedPath}`;
+  }
+  
+  // If it doesn't start with /, add /files/ prefix
+  if (!trimmedPath.startsWith('/')) {
+    return `https://work.alpheric.com/files/${trimmedPath}`;
+  }
+  
+  // Otherwise, construct the full URL
+  return `https://work.alpheric.com${trimmedPath}`;
+};
+
 
 /* ==================== Data ==================== */
 type PilotCard = {
@@ -19,6 +46,7 @@ interface StartPilotProps {
   heading?: string;
   description?: string;
   buttonData?: string;
+  image?: string;
 }
 
 const DEFAULT_CARDS: PilotCard[] = [
@@ -39,7 +67,8 @@ const DEFAULT_CARDS: PilotCard[] = [
 /* ==================== UI Bits ==================== */
 
 
-function PilotCardView({ card, title, heading, description, buttonData }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string }) {
+function PilotCardView({ card, title, heading, description, buttonData, imageUrl }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string; imageUrl?: string }) {
+  const bigImg = imageUrl || card.bigImg;
   
   return (
     <div className="relative w-full h-fit overflow-hidden  box-border">
@@ -111,11 +140,12 @@ function PilotCardView({ card, title, heading, description, buttonData }: { card
               </div>
             </div>
             <div>
-            {card.bigImg && (
+            {bigImg && (
             <img
-              src={card.bigImg}
+              src={bigImg}
               alt=""
               className="pointer-events-none  z-[2] h-auto w-[580px] shrink-0  object-contain object-top"
+              referrerPolicy="no-referrer"
             />
           )}
             </div>
@@ -131,8 +161,9 @@ function PilotCardView({ card, title, heading, description, buttonData }: { card
 }
 
 
-function PilotCardMobile({ card, title, heading, description, buttonData }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string }) {
+function PilotCardMobile({ card, title, heading, description, buttonData, imageUrl }: { card: PilotCard; title?: string; heading?: string; description?: string; buttonData?: string; imageUrl?: string }) {
   const subtitleLines = card.subtitle.split('\n').filter(line => line.trim());
+  const bigImg = imageUrl || card.bigImg;
   
   return (
     <div className={`relative w-full overflow-hidden ${card.gradient} text-white rounded-none `}>
@@ -141,11 +172,12 @@ function PilotCardMobile({ card, title, heading, description, buttonData }: { ca
       <div className="absolute inset-0 bg-black/20" />
 
       {/* top-right image (absolute) */}
-      {card.bigImg && (
+      {bigImg && (
         <img
-          src={card.bigImg}
+          src={bigImg}
           alt=""
           className="absolute -top-0 right-0 w-[162px] sm:w-[220px] md:w-[300px] pointer-events-none"
+          referrerPolicy="no-referrer"
         />
       )}
 
@@ -213,15 +245,16 @@ function PilotCardMobile({ card, title, heading, description, buttonData }: { ca
 }
 
 
-export default function Study({ title, heading, description, buttonData }: StartPilotProps) {
+export default function Study({ title, heading, description, buttonData, image }: StartPilotProps) {
   const cards = DEFAULT_CARDS;
+  const imageUrl = getImageUrl(image);
   
   return (
     <div className="w-full px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-[40px] sm:py-[60px] md:py-[80px] lg:py-[100px]">
       {/* Mobile View */}
       <div className="lg:hidden space-y-6">
         {cards.map((card) => (
-          <PilotCardMobile key={`m-${card.id}`} card={card} title={title} heading={heading} description={description} buttonData={buttonData} />
+          <PilotCardMobile key={`m-${card.id}`} card={card} title={title} heading={heading} description={description} buttonData={buttonData} imageUrl={imageUrl} />
         ))}
       </div>
 
@@ -229,7 +262,7 @@ export default function Study({ title, heading, description, buttonData }: Start
       <div className="hidden lg:block">
         {cards.map((card) => (
           <div key={card.id} className="mb-8">
-            <PilotCardView card={card} title={title} heading={heading} description={description} buttonData={buttonData} />
+            <PilotCardView card={card} title={title} heading={heading} description={description} buttonData={buttonData} imageUrl={imageUrl} />
           </div>
         ))}
       </div>

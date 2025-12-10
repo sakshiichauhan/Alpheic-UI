@@ -147,6 +147,7 @@ export const UxDesign = () => {
           heading={data?.hire_card_heading}
           description={data?.hire_card_description}
           buttonData={data?.hire_card_buttondata}
+
         />
       )}
       
@@ -175,6 +176,7 @@ export const UxDesign = () => {
           heading={data?.service_piolet_heading}
           description={data?.service_piolet_description}
           buttonData={data?.service_piolet_buttondata}
+          image={data?.service_piolet_image}
         />
       )}
       

@@ -93,6 +93,7 @@ export interface DesignInsightItem {
   about?: string;
   tag?: string;
   tags?: Array<{ tag?: string; Tag?: string } | string>;
+  read?: string;
 }
 
 export interface DesignPageL2Data {
@@ -619,6 +620,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
                         creation: insightData.creation,
                         image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
                         read_time: insightData.read_time,
+                        read: insightData.read || insightData.read_time,
                         about: insightData.about || displayTag || 'Insights',
                         tag: displayTag,
                         tags: insightTags, // Store the full tags array

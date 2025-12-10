@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
 import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
+import { fetchCaseStudyByName } from '@/store/Slice/CaseStudy/CaseStudyThunk';
+import { fetchBrandClientByName } from '@/store/Slice/BrandClientThunk';
 import { ParsedHtml } from '@/Components/ParsedHtml';
 import Amber from "@/assets/Tools/Amber.png";
 
@@ -53,6 +55,7 @@ interface SlideItem {
   image: string;
   alt?: string;
   logoLabel?: string;
+  brandLogo?: string;
   headline?: string;
   description?: string;
 }
@@ -264,7 +267,11 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
             {/* Left Side: Logo + Text */}
             <div className="flex w-full items-center gap-4 md:w-auto">
               <div className="flex xl:h-[100px] md:h-[80px] h-[50px] xl:min-w-[111px] md:min-w-[75px] min-w-[50px] flex-none items-center justify-center bg-white/95">
-                <img src={Amber} alt="Amber" className="h-full w-full object-contain" />
+                {currentSlide.brandLogo ? (
+                  <img src={currentSlide.brandLogo} alt="Brand Logo" className="h-full w-full object-contain" />
+                ) : (
+                  <img src={Amber} alt="Amber" className="h-full w-full object-contain" />
+                )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <AnimatePresence mode="wait">
@@ -311,6 +318,8 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
 const DesignPractice: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+  const { caseStudies } = useSelector((state: RootState) => state.caseStudy);
+  const { brandClients } = useSelector((state: RootState) => state.brandClient);
 
   useEffect(() => {
     // Fetch data if not already loaded
@@ -318,6 +327,51 @@ const DesignPractice: React.FC = () => {
       dispatch(fetchDesignPageL2Data());
     }
   }, [dispatch, data, loading]);
+
+  // Fetch case studies and brand clients when linkServiceNames are available
+  useEffect(() => {
+    if (!data?.link_service_names || data.link_service_names.length === 0) {
+      return;
+    }
+
+    // Collect all unique case study names from case_study_slides
+    const caseStudyNames = new Set<string>();
+    data.link_service_names.forEach((item) => {
+      if (item.case_study_slides) {
+        item.case_study_slides.forEach((slide) => {
+          if (slide.case_study_name) {
+            caseStudyNames.add(slide.case_study_name);
+          }
+        });
+      }
+    });
+
+    // Fetch case studies that we don't have yet
+    caseStudyNames.forEach((caseStudyName) => {
+      if (!caseStudies[caseStudyName]) {
+        dispatch(fetchCaseStudyByName(caseStudyName));
+      }
+    });
+  }, [dispatch, data?.link_service_names, caseStudies]);
+
+  // Fetch brand clients when case studies are loaded
+  useEffect(() => {
+    const brandNames = new Set<string>();
+    
+    // Collect brand_linking values from case studies
+    Object.values(caseStudies).forEach((caseStudy) => {
+      if (caseStudy.brand_linking) {
+        brandNames.add(caseStudy.brand_linking);
+      }
+    });
+
+    // Fetch brand clients that we don't have yet
+    brandNames.forEach((brandName) => {
+      if (!brandClients[brandName]) {
+        dispatch(fetchBrandClientByName(brandName));
+      }
+    });
+  }, [dispatch, caseStudies, brandClients]);
 
   // Conditionally render based on link_service
   const shouldShowSection = data?.link_service === 1;
@@ -381,10 +435,23 @@ const DesignPractice: React.FC = () => {
             hasAttachment: !!slide.first_attachment
           });
           
+          // Get brand logo from case study's brand_linking
+          let brandLogo: string | undefined;
+          if (slide.case_study_name) {
+            const caseStudy = caseStudies[slide.case_study_name];
+            if (caseStudy?.brand_linking) {
+              const brandClient = brandClients[caseStudy.brand_linking];
+              if (brandClient?.attach_logo) {
+                brandLogo = brandClient.attach_logo;
+              }
+            }
+          }
+          
           return {
             image: slide.first_attachment as string, // From CaseStudy API - 1st attachment (already processed URL)
             alt: slide.full_title || '', // From CaseStudy API
             logoLabel: 'amber', // Only default - logo
+            brandLogo, // Brand logo from BrandClient API
             headline: slide.full_title || '', // From CaseStudy API
             description: slide.very_short_description || '', // From CaseStudy API
           };
@@ -410,7 +477,7 @@ const DesignPractice: React.FC = () => {
         };
       })
       .filter((card): card is NonNullable<typeof card> => card !== null);
-  }, [linkServiceNames]);
+  }, [linkServiceNames, caseStudies, brandClients]);
 
   // Don't render if link_service is 0
   if (data && !shouldShowSection) {

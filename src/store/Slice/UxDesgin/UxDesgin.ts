@@ -66,6 +66,7 @@ export interface ServiceInsightItem {
   tag?: string;
   tags?: Array<{ tag?: string; Tag?: string } | string>;
   read_time?: string;
+  read?: string;
 }
 
 export interface ServicePageData {
@@ -120,6 +121,8 @@ export interface ServicePageData {
   hire_card_heading: string;
   hire_card_description: string;
   hire_card_buttondata?: string;
+  hire_card_image?: string;
+  hire_card_attach_image?: string;
 
   // Service Brands Section
   service_brands: number;
@@ -141,6 +144,7 @@ export interface ServicePageData {
   service_piolet_heading: string;
   service_piolet_description: string;
   service_piolet_buttondata?: string;
+  service_piolet_image?: string;
 
   // Section FAQs
   section_faqs: number;
@@ -381,6 +385,7 @@ export const fetchServicePageData = createAsyncThunk(
                         creation: insightData.creation,
                         image: insightData.main_image || insightData.image || insightData.banner_image || insightData.thumbnail || '',
                         read_time: insightData.read_time,
+                        read: insightData.read || insightData.read_time,
                         about: insightData.about || displayTag || 'Insights',
                         tag: displayTag,
                         tags: insightTags, // Store the full tags array

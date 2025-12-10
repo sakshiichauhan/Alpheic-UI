@@ -95,6 +95,7 @@ const Industries: React.FC<{ className?: string; heading?: string }> = ({
                     style={{
                       filter: isHighlighted ? "invert(69%) sepia(91%) saturate(1397%) hue-rotate(142deg) brightness(99%) contrast(93%)" : "none"
                     }}
+                    referrerPolicy="no-referrer"
                   />
                   
                   {/* Text */}

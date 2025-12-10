@@ -7,6 +7,9 @@ import designPageL2Reducer from './Slice/UxDesgin/DesginPageThunk';
 import servicePageL1Reducer from './Slice/UxDesgin/ServiceThunk';
 import caseStudyReducer from './Slice/CaseStudy/CaseStudyThunk';
 import latestInsightsReducer from './Slice/LatestInsights/LatestInsightThunk';
+import technologyPageReducer from './Slice/IndustryPage/TechnologyPageThunk';
+import industryPageReducer from './Slice/IndustryPage/IndustryThunk';
+import brandClientReducer from './Slice/BrandClientThunk';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -17,6 +20,9 @@ const rootReducer = combineReducers({
   servicePageL1: servicePageL1Reducer,
   caseStudy: caseStudyReducer,
   latestInsights: latestInsightsReducer,
+  technologyPage: technologyPageReducer,
+  industryPage: industryPageReducer,
+  brandClient: brandClientReducer,
 });
 
 export default rootReducer;
