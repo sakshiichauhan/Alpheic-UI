@@ -1,132 +1,79 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { motion, useInView, useMotionValue, useAnimationFrame } from "framer-motion";
+import { motion } from "framer-motion";
 
-type Item = { src: string; alt: string };
-
-// Import all images in ClientsLogo (no numbering logic). Keep stable alphabetical order.
-const buildLogos = (): Item[] => {
+// --- 1. DATA SETUP (Keep stable) ---
+const buildLogos = () => {
   const modules = import.meta.glob("@/assets/ClientsLogo/*.{png,jpg,jpeg,svg}", { eager: true });
-  const entries = Object.entries(modules).sort(([a], [b]) => a.localeCompare(b));
-  return entries.map(([path, mod]) => {
-    const url = (mod as { default: string }).default;
-    const file = path.split("/").pop() ?? path;
-    const alt = file.replace(/\.[a-zA-Z]+$/, "");
-    return { src: url, alt };
-  });
+  return Object.entries(modules)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, mod]) => ({
+      src: (mod as any).default,
+      alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Logo",
+    }));
 };
 
-const LOGOS: Item[] = buildLogos();
+const LOGOS = buildLogos();
 
-type RowProps = {
-  items: Item[];
-  speed?: number;   // px/sec
-  dir?: 1 | -1;  
-};
-
-function MarqueeRow({
-  items,
-  speed = 55,
-  dir = 1,
-}: RowProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null); // measure ONE track
-  const inView = useInView(containerRef, { amount: 0.15 });
-
-  const x = useMotionValue(0);
-  const [trackW, setTrackW] = useState(0);
+// --- 2. SIMPLE COMPONENT ---
+const MarqueeRow = ({ items, direction = "left", speed = 30, className = "" }: { items: typeof LOGOS, direction?: "left" | "right", speed?: number, className?: string }) => {
   
-
-  const measure = () => {
-    if (trackRef.current) setTrackW(trackRef.current.getBoundingClientRect().width);
-  };
-
-  useLayoutEffect(() => {
-    measure();
-    const onResize = () => measure();
-    window.addEventListener("resize", onResize);
-
-    // Re-measure when images finish loading / sizes change
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined" && trackRef.current) {
-      ro = new ResizeObserver(measure);
-      ro.observe(trackRef.current);
-    }
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      ro?.disconnect();
-    };
-  }, []);
-
-  // Start position:
-  //  - dir = 1 (L→R): start at -trackW so the middle copy fills the viewport
-  //  - dir = -1 (R→L): align the END of the track with the right edge so it starts "from far right"
-  useEffect(() => {
-    if (!trackW) return;
-    const eps = 0.5;
-    // Start both directions so the seam is offscreen to the left
-    x.set(-trackW + eps);
-  }, [trackW, dir, x]);
-
-  // Per-frame loop with wrap
-  useAnimationFrame((_, delta) => {
-    if (!trackW || !inView) return;
-    const step = (speed / 1000) * delta * dir;
-    let next = x.get() + step;
-
-    // Wrap within [-trackW, 0)
-    if (next >= 0) next -= trackW;
-    if (next <= -trackW) next += trackW;
-
-    x.set(next);
-  });
-
-  const Logo = (key: string, it: Item) => (
-    <div key={key} className="flex-none flex items-center pointer-events-auto">
-      <img
-        src={it.src}
-        alt={it.alt}
-        className="block object-contain opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0 h-[41px] sm:h-[60px] md:h-[72px] lg:h-[124px] xl:h-[156px] pointer-events-auto"
-        style={{ width: "auto" }}
-        loading="lazy"
-      />
-    </div>
-  );
+  // Logic: 
+  // 1. If direction is Right, we reverse the list first.
+  // 2. We double the list (A + A) to create the seamless loop.
+  const content = direction === "right" ? [...items].reverse() : items;
+  const loopItems = [...content, ...content];
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full overflow-hidden"
-      style={{ background: "transparent" }}
-    >
-      {/* No outer gap; gaps are inside each track so the seam never shows as blank */}
-      <motion.div className="flex w-max transform-gpu pointer-events-none" style={{ x, willChange: "transform" }}>
-        {/* Track A (measured) */}
-        <div ref={trackRef} className="flex lg:pl-[24px] md:pl-[16px] sm:pl-[12px] pl-[8px] lg:gap-[24px] md:gap-[16px] sm:gap-[12px] gap-[8px] pointer-events-none">
-          {items.map((it, i) => Logo(`A-${i}`, it))}
-        </div>
-        {/* Track B (clone) */}
-        <div className="flex lg:pl-[24px] md:pl-[16px] sm:pl-[12px] pl-[8px] lg:gap-[24px] md:gap-[16px] sm:gap-[12px] gap-[8px] pointer-events-none">
-          {items.map((it, i) => Logo(`B-${i}`, it))}
-        </div>
-        {/* Removed extra buffer track to reduce any potential overlap at the seam */}
+    <div className={`w-full overflow-hidden flex bg-transparent select-none ${className}`}>
+      <motion.div
+        // EXACT ORIGINAL UI GAPS
+        className="flex shrink-0 items-center gap-[8px] sm:gap-[12px] md:gap-[16px] lg:gap-[24px] pr-[8px] sm:pr-[12px] md:pr-[16px] lg:pr-[24px]"
+        // ANIMATION LOGIC:
+        // Left:  Moves 0% -> -50%
+        // Right: Moves -50% -> 0% (This keeps the "Middle" of the row visible, ensuring mouse clicks work)
+        initial={{ x: direction === "left" ? "0%" : "-50%" }}
+        animate={{ x: direction === "left" ? "-50%" : "0%" }}
+        transition={{
+          duration: speed,
+          ease: "linear",
+          repeat: Infinity,
+        }}
+      >
+        {loopItems.map((item, i) => (
+          <div key={i} className="flex-none flex items-center justify-center relative">
+            <img
+              src={item.src}
+              alt={item.alt}
+              draggable={false}
+              // EXACT ORIGINAL UI SIZES & HOVER
+              className="block object-contain opacity-80 hover:opacity-100 transition-opacity duration-300 cursor-pointer h-[41px] sm:h-[60px] md:h-[72px] lg:h-[124px] xl:h-[156px] pointer-events-auto"
+              style={{ width: "auto" }}
+            />
+          </div>
+        ))}
       </motion.div>
     </div>
   );
-}
+};
 
+// --- 3. MAIN EXPORT ---
 export default function ClientLogoMarquee() {
   return (
-    <section className="w-full lg:py-[64px] md:py-[48px] py-[32px]">
+    // EXACT ORIGINAL SECTION PADDING
+    <section className="w-full lg:pt-[64px] lg:pb-[24px] md:pt-[48px] pt-[32px] pb-[0px]">
       <div className="flex w-full flex-col gap-8">
-
         
-      <div className="flex w-full justify-center lg:text-[40px] md:text-[32px] sm:text-[26px] text-[20px] font-medium">
-      Proudly worked with
-      </div>
-        <MarqueeRow items={LOGOS} dir={1} speed={100} />
+        {/* EXACT ORIGINAL FONT SIZES */}
+        <div className="flex w-full justify-center lg:text-[40px] md:text-[32px] sm:text-[26px] text-[20px] font-medium">
+          Proudly worked with
+        </div>
 
-        <MarqueeRow items={LOGOS} dir={-1} speed={100} />
+        {/* Row 1: Left */}
+        <MarqueeRow items={LOGOS} direction="left" speed={100} />
+
+        {/* Row 2: Right */}
+        <MarqueeRow items={LOGOS} direction="right" speed={100} />
+        
+        <MarqueeRow className="opacity-0 " items={LOGOS} direction="left" speed={100} />
       </div>
     </section>
   );

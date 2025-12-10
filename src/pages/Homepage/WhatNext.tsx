@@ -2,9 +2,9 @@
 import React, { useMemo, useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 
-import first from "@/assets/WhatNext/i.png";
-import second from "@/assets/WhatNext/ii.png";
-import third from "@/assets/WhatNext/iii.png";
+import first from "@/assets/Solutions/one.png";
+import second from "@/assets/Solutions/two.png";
+import third from "@/assets/Solutions/three.png";
 
 interface CardData {
   title: string;

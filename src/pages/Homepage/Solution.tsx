@@ -4,11 +4,11 @@ import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import SolutionCard from "@/Components/SolutionCard";
 
 // Images
-import Consult from "@/assets/Solutions/Consult.jpg";
-import Build from "@/assets/Solutions/Build.jpg";
-import Design from "@/assets/Solutions/Design.jpg";
-import Host from "@/assets/Solutions/Host.jpg";
-import Market from "@/assets/Solutions/Market.jpg";
+import Consult from "@/assets/Solutions/i.png";
+import Build from "@/assets/Solutions/ii.png";
+import Design from "@/assets/Solutions/iii.png";
+import Host from "@/assets/Solutions/iv.png";
+import Market from "@/assets/Solutions/v.png";
 import Blank from "@/assets/Solutions/Blank.png";
 
 import Avatar1 from "@/assets/Homeicons/asset-1.png";
