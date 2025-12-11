@@ -86,7 +86,7 @@ const ServiceCategorySection: React.FC = () => {
                       <ServiceCard
                         title={service.title}
                         description={service.desc}
-                        href="/LetsTalk"
+                        href="/Design"
                       />
                     </div>
                   );

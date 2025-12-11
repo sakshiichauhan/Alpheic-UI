@@ -15,9 +15,10 @@ import Amber from "@/assets/Tools/Amber.png";
 interface ServiceItemProps {
   text: string;
   index: number;
+  href: string;
 }
 
-const ServiceItem: React.FC<ServiceItemProps> = ({ text, index }) => (
+const ServiceItem: React.FC<ServiceItemProps> = ({ text, index, href }) => (
   <li className="flex items-center justify-between border border-[#F0F1F2] xl:p-4 md:p-3 p-2">
 
     {/* Left side: Number + Text */}
@@ -37,7 +38,7 @@ const ServiceItem: React.FC<ServiceItemProps> = ({ text, index }) => (
 
     {/* Right side: Icon in a box (as a button for interaction) */}
     <Link
-      to="/UxDesgin"
+      to={href}
       className="flex xl:h-10 xl:w-10 md:h-8 md:w-8 h-6 w-6 shrink-0 items-center justify-center 
                    border border-[var(--color)] text-black 
                    transition-colors hover:bg-[var(--color)]/50"
@@ -63,7 +64,7 @@ interface SlideItem {
 interface PracticeCardProps {
   title: string;
   description: string;
-  services: string[];
+  services: Array<{ text: string; href: string }>;
   imageSrc: string;
   imageAlt: string;
   imageCaption: string;
@@ -176,7 +177,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
         </p>
         <ol className="flex flex-col gap-4 2xl:mt-[32px] xl:mt-[28px] lg:mt-[24px] md:mt-[20px] mt-[16px]">
           {services.map((service, index) => (
-            <ServiceItem key={index} text={service} index={index} />
+            <ServiceItem key={index} text={service.text} index={index} href={service.href} />
           ))}
         </ol>
       </div>
@@ -382,12 +383,38 @@ const DesignPractice: React.FC = () => {
   // Get titles from link_service_names array
   const linkServiceNames = data?.link_service_names || [];
   
+  // Helper function to generate href from service name - similar to industries
+  const generateHref = (serviceName: string | undefined): string => {
+    if (!serviceName) return '/UxDesgin';
+    // Link to the service page with the service name as a route parameter
+    // Format: /services/design/{serviceName}
+    // The serviceName should match what ServicePage L4 expects
+    const href = `/services/design/${encodeURIComponent(serviceName)}`;
+    console.log('DesignPractice: Generated href:', href, 'for serviceName:', serviceName);
+    return href;
+  };
+
   // Helper function to get services from API - NO DEFAULTS
-  const getServices = (serviceItem: LinkServiceNameItem | undefined): string[] => {
+  const getServices = (serviceItem: LinkServiceNameItem | undefined): Array<{ text: string; href: string }> => {
     if (serviceItem?.service_category_services && Array.isArray(serviceItem.service_category_services) && serviceItem.service_category_services.length > 0) {
       const mappedServices = serviceItem.service_category_services
-        .map(item => item.service)
-        .filter((service): service is string => Boolean(service));
+        .map(item => {
+          // Use service field as the identifier (this is what ServicePage L4 expects)
+          // The service field contains the service name/identifier
+          const serviceIdentifier = item.service || item.name || '';
+          const serviceText = item.service || item.name || '';
+          console.log('DesignPractice: Service item:', { 
+            name: item.name, 
+            service: item.service, 
+            serviceIdentifier, 
+            serviceText 
+          });
+          return {
+            text: serviceText,
+            href: generateHref(serviceIdentifier) // Use service field as identifier for ServicePage L4
+          };
+        })
+        .filter(service => Boolean(service.text) && Boolean(service.href));
       return mappedServices;
     }
     return [];

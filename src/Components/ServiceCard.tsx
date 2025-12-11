@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Arrow1 from '@/assets/Arrow1.png';
 
 interface ServiceCardProps {
@@ -11,9 +11,20 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ title, description, href = "#", icon, iconUrl }) => {
+  const navigate = useNavigate();
+  
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (href && href !== '#') {
+      // Use navigate to ensure proper URL handling
+      navigate(href);
+    }
+  };
+
   return (
     <Link
       to={href}
+      onClick={handleClick}
       className="group relative flex 2xl:max-w-[485px] flex-col justify-between bg-[#FBFBFB] p-[16px] sm:p-[18px] md:p-[20px] lg:p-[24px] xl:p-[28px] 2xl:p-[32px]"
     >
       <div className="flex items-start justify-between">

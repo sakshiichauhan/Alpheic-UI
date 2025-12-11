@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
@@ -19,13 +20,24 @@ import DesignExpert from "@/pages/Services/DesignExpert";
 import Industries from "@/pages/Services/Industries";
 
 export const UxDesign = () => {
+  const { name } = useParams<{ name?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading, error } = useSelector((state: RootState) => state.servicePage);
 
+  // Get service name from route or use default 'Page'
+  const currentService = name ? decodeURIComponent(name) : 'Page';
+
   useEffect(() => {
-    // Fetch service page data on component mount
-    dispatch(fetchServicePageData());
-  }, [dispatch]);
+    // Fetch service data on component mount or when service name changes
+    // Always fetch when name changes, or if no data exists
+    console.log('UxDesign: Current service:', currentService, 'URL name param:', name, 'Data name:', data?.name);
+    if (!data || !data.name || data.name !== currentService) {
+      if (!loading) {
+        console.log('UxDesign: Fetching service data for:', currentService);
+        dispatch(fetchServicePageData(currentService));
+      }
+    }
+  }, [dispatch, data, loading, currentService, name]);
 
   // Show loading state (optional - you can customize this)
   if (loading) {
@@ -46,7 +58,7 @@ export const UxDesign = () => {
         <div className="text-center">
           <p className="text-red-600 mb-4">Error loading page data: {error}</p>
           <button
-            onClick={() => dispatch(fetchServicePageData())}
+            onClick={() => dispatch(fetchServicePageData(currentService))}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry

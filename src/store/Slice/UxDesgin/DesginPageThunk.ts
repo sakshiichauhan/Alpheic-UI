@@ -4,6 +4,7 @@ import type { RootState } from '../../rootReducer';
 // API Response Types
 export interface ServiceCategoryServiceItem {
   service?: string;
+  name?: string;
 }
 
 type CaseStudyAttachment = { attach?: string };

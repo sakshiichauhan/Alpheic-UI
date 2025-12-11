@@ -1,6 +1,10 @@
 import { motion, useScroll, useTransform, } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch } from "@/store";
+import { fetchPilots, selectPilots, buildPilotImageUrl } from "@/store/Slice/Pilot/PilotThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 
 import photo1 from "@/assets/Pilot_assets/one.png";
 import photo2 from "@/assets/Pilot_assets/two.png";
@@ -14,50 +18,78 @@ import { ArrowUpRight } from "lucide-react";
 type PilotCard = {
   id: string;
   title: string;
+  titleHtml?: string;
   subtitle: string;
   gradient: string;
   bigImg?: string;
   tags: string[];
   duration: string;
+  button1?: string;
+  button2?: string;
+  calendarIcon?: string;
 };
 
-const CARDS: PilotCard[] = [
+// Default gradients and fallback images
+const defaultGradients: Record<string, string> = {
+  you: "bg-gradient-to-b from-[#62D5E8] to-[#678DFE]",
+  startups: "bg-gradient-to-b from-[#B772FA] to-[#5C87FF]",
+  smb: "bg-gradient-to-b from-[#F1B6FF] to-[#B772FA]",
+  enterprise: "bg-gradient-to-b from-[#01C9DF] to-[#678DFE]",
+};
+
+
+// Mapping from API pilot names to card IDs
+const pilotNameToCardId: Record<string, string> = {
+  Dreamer: "you",
+  Startups: "startups",
+  SMBs: "smb",
+  Enterprises: "enterprise",
+};
+
+const defaultCards: PilotCard[] = [
   {
     id: "you",
     title: "Pilot for You",
-    subtitle:
-      "For individuals or creators exploring ideas.",
-    gradient: "bg-gradient-to-b from-[#62D5E8] to-[#678DFE]",
+    subtitle: "For individuals or creators exploring ideas.",
+    gradient: defaultGradients.you,
     bigImg: photo1,
     duration: "4 weeks",
-    tags: ["Strategy" , "Branding" , "Design" , "Website" , "Growth"],
+    tags: ["Strategy", "Branding", "Design", "Website", "Growth"],
+    button1: "Book a Piolet",
+    button2: "VIEW ALL",
   },
   {
     id: "startups",
     title: "Pilot for Startups",
     subtitle: "For emerging founders building their first big leap.",
-    gradient: "bg-gradient-to-b from-[#B772FA] to-[#5C87FF]",
+    gradient: defaultGradients.startups,
     bigImg: photo2,
     duration: "6 weeks",
-    tags: ["MVP" , "Product" , "Launch" , "Marketing" , "Automation" ],
+    tags: ["MVP", "Product", "Launch", "Marketing", "Automation"],
+    button1: "Book a Piolet",
+    button2: "VIEW ALL",
   },
   {
     id: "smb",
     title: "Pilot For SMBs",
     subtitle: "For growing businesses ready to scale with clarity.",
-    gradient: "bg-gradient-to-b from-[#F1B6FF] to-[#B772FA]",
+    gradient: defaultGradients.smb,
     bigImg: photo3,
     duration: "6 weeks",
-    tags: ["Digital" , "Cloud" , "Design" , "Market" , "Optimize"],
+    tags: ["Digital", "Cloud", "Design", "Market", "Optimize"],
+    button1: "Book a Piolet",
+    button2: "VIEW ALL",
   },
   {
     id: "enterprise",
     title: "Pilot for Enterprises",
     subtitle: "For established organizations seeking transformation and innovation.",
-    gradient: "bg-gradient-to-b from-[#01C9DF] to-[#678DFE]",
+    gradient: defaultGradients.enterprise,
     bigImg: photo4,
     duration: "8 weeks",
-    tags: ["Consulting" , "Infrastructure" , "Security" , "AI" , "Integration"],
+    tags: ["Consulting", "Infrastructure", "Security", "AI", "Integration"],
+    button1: "Book a Piolet",
+    button2: "VIEW ALL",
   },
 ];
 
@@ -80,6 +112,7 @@ function PilotCardView({ card }: { card: PilotCard }) {
             src={baground1}
             alt="bg"
             className="absolute inset-0 z-0"
+            referrerPolicy="no-referrer"
           />
 
           <div className="absolute inset-0 z-[1] bg-black/20" />
@@ -88,7 +121,9 @@ function PilotCardView({ card }: { card: PilotCard }) {
           <div className="flex h-full flex-row justify-between  min-[1700px]:pl-[84px] min-[1400px]:pl-[64px] min-[1024px]:pl-[40px] pl-[20px]">
             <div className="2xl:min-w-[630px] xl:min-w-[566px] lg:min-w-[495px] flex flex-col xl:gap-[18px] gap-[14px] min-[1700px]:pt-[84px] min-[1400px]:pt-[64px] min-[1250px]:pt-[40px] pt-[20px]">
                <h3 className="2xl:text-[64px] xl:text-[52px] lg:text-[40px] text-[32px]">
-                 {card.title.includes("You") ? (
+                 {card.titleHtml ? (
+                   <ParsedHtml htmlContent={card.titleHtml} as="span" />
+                 ) : card.title.includes("You") ? (
                    <>
                      {card.title.split("You")[0]}
                      <span className="font-bold">{" You"}</span>
@@ -106,44 +141,64 @@ function PilotCardView({ card }: { card: PilotCard }) {
         <span className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] text-[16px] font-medium tracking-tight">
           {card.duration}
         </span>
-        <span className="2xl:text-[22px] xl:text-[20px] lg:text-[18px] text-[16px] leading-none">🗓️</span>
+        {card.calendarIcon ? (
+          <img
+            src={buildPilotImageUrl(card.calendarIcon)}
+            alt="Calendar"
+            className="2xl:w-[22px] xl:w-[20px] lg:w-[18px] w-[16px] 2xl:h-[22px] xl:h-[20px] lg:h-[18px] h-[16px] object-contain"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <span className="2xl:text-[22px] xl:text-[20px] lg:text-[18px] text-[16px] leading-none">🗓️</span>
+        )}
       </div>
 
       {/* White button */}
-      <button
-        type="button"
-        className="inline-flex items-center justify-center border border-black/10 bg-white xl:px-[34px] px-[30px] xl:py-[16px] py-[12px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)]
-                   hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
-      >
-        Book a pilot
-      </button>
+      {card.button1 && (
+        <button
+          type="button"
+          className="inline-flex items-center justify-center border border-black/10 bg-white xl:px-[34px] px-[30px] xl:py-[16px] py-[12px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)]
+                     hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+        >
+          {card.button1}
+        </button>
+      )}
     </div>
             </div>
-            <div>
             {card.bigImg && (
-            <img
-              src={card.bigImg}
-              alt=""
-              className="pointer-events-none  z-[2] 2xl:max-w-[521px] 2xl:max-h-[417px] xl:max-w-[421px] xl:max-h-[317px] lg:max-w-[351px] lg:max-h-[247px] md:max-w-[221px] md:max-h-[117px] max-w-[100px] max-h-[80px] shrink-0  object-cover object-bottom"
-            />
-          )}
-            </div>
+              <div>
+                <img
+                  src={card.bigImg}
+                  alt=""
+                  className="pointer-events-none  z-[2] 2xl:max-w-[521px] 2xl:max-h-[417px] xl:max-w-[421px] xl:max-h-[317px] lg:max-w-[351px] lg:max-h-[247px] md:max-w-[221px] md:max-h-[117px] max-w-[100px] max-h-[80px] shrink-0  object-cover object-bottom"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
             
           </div>
 
-            <div className="flex items-end justify-between gap-[10px] pt-0 min-[1700px]:px-[84px] min-[1400px]:px-[64px] min-[1024px]:px-[40px] px-[20px]  min-[1700px]:pb-[84px] min-[1400px]:pb-[64px] min-[1024px]:pb-[40px] pb-[20px]">
-              <div className="flex flex-wrap gap-4 2xl:min-w-auto xl:max-w-[710px] lg:max-w-[640px] w-full">
-                {card.tags.slice(0, 10).map((t) => (
-                  <TagChip key={t} label={t} />
-                ))}
+            {card.tags.length > 0 && (
+              <div className="flex items-end justify-between gap-[10px] pt-0 min-[1700px]:px-[84px] min-[1400px]:px-[64px] min-[1024px]:px-[40px] px-[20px]  min-[1700px]:pb-[84px] min-[1400px]:pb-[64px] min-[1024px]:pb-[40px] pb-[20px]">
+                <div className="flex flex-wrap gap-4 2xl:min-w-auto xl:max-w-[710px] lg:max-w-[640px] w-full">
+                  {card.tags.slice(0, 10).map((t) => (
+                    <TagChip key={t} label={t} />
+                  ))}
+                </div>
+                {card.button2 && (
+                  <Link 
+                    to="/Pilot"
+                    className="shrink-0 inline-flex items-center gap-2 bg-white xl:px-[22px] px-[20px] xl:py-[12px] py-[10px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] text-black font-urbanist hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    {card.button2} <ArrowUpRight className="w-6 h-auto" />
+                  </Link>
+                )}
               </div>
-              <Link 
-                to="/Pilot"
-                className="shrink-0 inline-flex items-center gap-2 bg-white xl:px-[22px] px-[20px] xl:py-[12px] py-[10px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] text-black font-urbanist hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                VIEW ALL <ArrowUpRight className="w-6 h-auto" />
-              </Link>
-            </div>
+            )}
             </div>
         </div>
       </div>
@@ -156,7 +211,7 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
   return (
     <div className={`relative w-full overflow-hidden ${card.gradient} text-white rounded-none `}>
       {/* background texture + overlay */}
-      <img src={baground1} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
+      <img src={baground1} alt="" className="absolute inset-0 w-full h-full object-cover object-center" referrerPolicy="no-referrer" />
       <div className="absolute inset-0 bg-black/20" />
 
       {/* top-right image (absolute) */}
@@ -165,6 +220,7 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
           src={card.bigImg}
           alt=""
           className="absolute -top-0 right-0 w-[162px] sm:w-[220px] md:w-[300px] pointer-events-none"
+          referrerPolicy="no-referrer"
         />
       )}
 
@@ -173,7 +229,9 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
         <div className="flex flex-col gap-6 md:gap-10 sm:gap-8 ">
           <div className="flex flex-col gap-4 md:gap-6 ">
         <h3 className="text-[24px] sm:text-[32px] md:text-[36px] font-semibold">
-          {card.title.includes("You") ? (
+          {card.titleHtml ? (
+            <ParsedHtml htmlContent={card.titleHtml} as="span" />
+          ) : card.title.includes("You") ? (
             <>
               {card.title.split("You")[0]}
               <span className="font-bold">{" You"}</span>
@@ -193,23 +251,40 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
             <span className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[20px] sm:text-[16px] text-[14px] font-medium tracking-tight">
               {card.duration}
             </span>
-            <span className="2xl:text-[22px] xl:text-[20px] lg:text-[18px] md:text-[16px] text-[14px] leading-none">🗓️</span>
+            {card.calendarIcon ? (
+              <img
+                src={buildPilotImageUrl(card.calendarIcon)}
+                alt="Calendar"
+                className="2xl:w-[22px] xl:w-[20px] lg:w-[18px] md:w-[16px] sm:w-[14px] w-[14px] 2xl:h-[22px] xl:h-[20px] lg:h-[18px] md:h-[16px] sm:h-[14px] h-[14px] object-contain"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            ) : (
+              <span className="2xl:text-[22px] xl:text-[20px] lg:text-[18px] md:text-[16px] text-[14px] leading-none">🗓️</span>
+            )}
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center  justify-center border border-[var(--color)] sm:border-black/10 bg-white xl:px-[34px] px-[30px] xl:py-[16px] py-[12px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
-          >
-            Book a pilot
-          </button>
+          {card.button1 && (
+            <button
+              type="button"
+              className="inline-flex items-center  justify-center border border-[var(--color)] sm:border-black/10 bg-white xl:px-[34px] px-[30px] xl:py-[16px] py-[12px] 2xl:text-[20px] xl:text-[18px] lg:text-[16px] text-[14px] font-semibold text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] hover:shadow-[0_2px_0_rgba(0,0,0,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+            >
+              {card.button1}
+            </button>
+          )}
         </div>
         </div>
 
         {/* tags */}
-        <div className="mt-6 flex flex-wrap gap-3">
-          {card.tags.slice(0, 10).map((t) => (
-            <TagChip key={t} label={t} />
-          ))}
-        </div>
+        {card.tags.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-3">
+            {card.tags.slice(0, 10).map((t) => (
+              <TagChip key={t} label={t} />
+            ))}
+          </div>
+        )}
       </div>
       </div>
     </div>
@@ -219,9 +294,52 @@ function PilotCardMobile({ card }: { card: PilotCard }) {
 
 /* ==================== Page (with requested fade timing) ==================== */
 export default function Study() {
+  const dispatch = useDispatch<AppDispatch>();
+  const pilots = useSelector(selectPilots);
   const lastCardRef = useRef<HTMLDivElement>(null);
-
   const heroRef = useRef(null);
+
+  // Pilot names to fetch
+  const pilotNames = ['Dreamer', 'Startups', 'SMBs', 'Enterprises'];
+
+  useEffect(() => {
+    // Fetch all pilots if not already loaded
+    const pilotsToFetch = pilotNames.filter(name => !pilots[name]);
+    if (pilotsToFetch.length > 0) {
+      dispatch(fetchPilots(pilotsToFetch));
+    }
+  }, [dispatch, pilots]);
+
+  // Map API data to cards - only show cards that have been fetched from API
+  const CARDS: PilotCard[] = pilotNames
+    .map((pilotApiName) => {
+      const pilot = pilots[pilotApiName];
+      if (!pilot) return null;
+
+      // Find the corresponding default card for gradient and fallback data
+      const cardId = pilotNameToCardId[pilotApiName];
+      const defaultCard = defaultCards.find((card) => card.id === cardId);
+
+      if (!defaultCard) return null;
+
+      const card: PilotCard = {
+        id: defaultCard.id,
+        title: defaultCard.title, // Keep for fallback display structure, but prefer API titleHtml
+        titleHtml: pilot.banner_title,
+        subtitle: pilot.banner_description || '',
+        gradient: defaultCard.gradient, // Keep gradient for styling
+        duration: pilot.banner_time || '',
+        bigImg: pilot.banner_image
+          ? buildPilotImageUrl(pilot.banner_image)
+          : undefined,
+        tags: pilot.banner_tags?.map((tag) => tag.tag_name || '').filter(Boolean) || [],
+        button1: pilot.banner_button1 || '',
+        button2: pilot.banner_button2 || '',
+        calendarIcon: pilot.calander_img,
+      };
+      return card;
+    })
+    .filter((card): card is PilotCard => card !== null);
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -277,18 +395,18 @@ export default function Study() {
 
 
 
-{/* CARDS */}
+      {/* CARDS - Only show if we have cards from API */}
+      {CARDS.length > 0 && (
+        <>
+          {/* < lg : STATIC LIST (no animation; code for lg+ is hidden) */}
+          <div className="lg:hidden space-y-6">
+            {CARDS.map((card) => (
+              <PilotCardMobile key={`m-${card.id}`} card={card} />
+            ))}
+          </div>
 
-      {/* < lg : STATIC LIST (no animation; code for lg+ is hidden) */}
-      <div className="lg:hidden space-y-6">
-        {CARDS.map((card) => (
-          <PilotCardMobile key={`m-${card.id}`} card={card} />
-        ))}
-      </div>
-
-
-      <div className="hidden lg:block">
-      {CARDS.map((card, i) => {
+          <div className="hidden lg:block">
+            {CARDS.map((card, i) => {
         const isLast = i === CARDS.length - 1;
         return (
           <motion.div
@@ -303,10 +421,12 @@ export default function Study() {
             }}
           >
             <PilotCardView card={card} />
-          </motion.div>
-        );
-      })}
-      </div>
+            </motion.div>
+          );
+        })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

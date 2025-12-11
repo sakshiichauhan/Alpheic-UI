@@ -89,7 +89,7 @@ export default function DesignInsights({ heading, description, buttonData }: Des
   useEffect(() => {
     // Fetch data if not already loaded
     if (!data && !loading) {
-      dispatch(fetchServicePageData());
+      dispatch(fetchServicePageData('Page'));
     }
   }, [dispatch, data, loading]);
 

@@ -10,6 +10,9 @@ import latestInsightsReducer from './Slice/LatestInsights/LatestInsightThunk';
 import technologyPageReducer from './Slice/IndustryPage/TechnologyPageThunk';
 import industryPageReducer from './Slice/IndustryPage/IndustryThunk';
 import brandClientReducer from './Slice/BrandClientThunk';
+import pilotPageReducer from './Slice/Pilot/PilotPageThunk';
+import pilotReducer from './Slice/Pilot/PilotThunk';
+import subPilotReducer from './Slice/Pilot/SubPilotThunk';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -23,6 +26,9 @@ const rootReducer = combineReducers({
   technologyPage: technologyPageReducer,
   industryPage: industryPageReducer,
   brandClient: brandClientReducer,
+  pilotPage: pilotPageReducer,
+  pilot: pilotReducer,
+  subPilot: subPilotReducer,
 });
 
 export default rootReducer;

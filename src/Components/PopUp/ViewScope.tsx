@@ -9,6 +9,15 @@ type Program = {
   serviceMix: string;
   kpi: string;
   duration: string;
+  description?: string;
+  deliverables?: string;
+  features?: string[];
+  scopeItems?: string[];
+  objectivePoints?: Array<{ point?: string; [key: string]: any }>;
+  actionButton1?: string;
+  actionButton2?: string;
+  buttonText?: string;
+  subPilotData?: any;
 };
 
 type ViewScopeProps = {
@@ -76,46 +85,75 @@ const ViewScope: React.FC<ViewScopeProps> = ({ open, onClose, program }) => {
 
               {/* Title */}
               <h1 className="text-[24px] sm:text-[32px] md:text-[40px] font-medium text-foreground leading-tight">
-                {program?.pilot || 'Idea to Brand'}
+                {program?.pilot || 'Pilot Program'}
               </h1>
 
               {/* Objective Section */}
               <div className="space-y-4 md:space-y-6">
                 <div>
                   <span className="text-[20px] font-semibold text-[var(--sub-text)] font-urbanist">Objective: </span>
-                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist"> Transform your idea into a strong, memorable brand identity.</span>
+                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">
+                    {program?.subPilotData?.objective || 
+                     program?.subPilotData?.objective_name || 
+                     program?.description || 
+                     program?.objective || 
+                     'Transform your idea into a strong, memorable brand identity.'}
+                  </span>
                 </div>
 
-                {/* Features List - This could be made dynamic based on program data if needed */}
-                <ul className="space-y-2 md:space-y-3 pl-8">
-                  <li className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
-                    Brand strategy and positioning
-                  </li>
-                  <li className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
-                    Naming options and legal availability check
-                  </li>
-                  <li className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
-                    Visual identity concept (logo, color, type)
-                  </li>
-                  <li className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc mb-4">
-                    Recall and perception testing
-                  </li>
-                </ul>
+                {/* Objective Points List - Dynamic from API objective_points */}
+                {program?.objectivePoints && program.objectivePoints.length > 0 && (
+                  <ul className="space-y-2 md:space-y-3 pl-8">
+                    {program.objectivePoints.map((pointItem, index) => (
+                      <li key={pointItem.name || index} className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
+                        {pointItem.point || ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Fallback: Features List - Dynamic from API */}
+                {(!program?.objectivePoints || program.objectivePoints.length === 0) && program?.features && program.features.length > 0 && (
+                  <ul className="space-y-2 md:space-y-3 pl-8">
+                    {program.features.map((feature, index) => (
+                      <li key={index} className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Fallback: Show scope items if features not available */}
+                {(!program?.objectivePoints || program.objectivePoints.length === 0) && 
+                 (!program?.features || program.features.length === 0) && 
+                 program?.scopeItems && program.scopeItems.length > 0 && (
+                  <ul className="space-y-2 md:space-y-3 pl-8">
+                    {program.scopeItems.map((item, index) => (
+                      <li key={index} className="text-[20px] text-[var(--sub-text)] font-urbanist list-disc">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Deliverables Card */}
               <div className="bg-white p-[16px] space-y-3 md:space-y-4">
                 <div>
                   <span className="text-[20px] font-semibold text-[var(--sub-text)] font-urbanist">Deliverables: </span>
-                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">Strategy Deck + Brand Pack</span>
+                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">
+                    {program?.deliverables || 'Strategy Deck + Brand Pack'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[20px] font-semibold text-[var(--sub-text)] font-urbanist">Duration: </span>
-                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">{program?.duration || '2 Weeks'} 🗓️</span>
+                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">
+                    {program?.duration || '2 Weeks'} 🗓️
+                  </span>
                 </div>
                 <div>
                   <span className="text-[20px] font-semibold text-[var(--sub-text)] font-urbanist">Primary KPI: </span>
-                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">Name recall & clarity</span>
+                  <span className="text-[20px] text-[var(--sub-text)] font-urbanist">
+                    {program?.kpi || 'Name recall & clarity'}
+                  </span>
                 </div>
               </div>
 
@@ -124,7 +162,7 @@ const ViewScope: React.FC<ViewScopeProps> = ({ open, onClose, program }) => {
                 onClick={handleBookCall}
                 className="flex items-center justify-center lg:text-[24px] md:text-[20px] text-[16px] md:px-8 px-4 md:py-[10px] py-[8px] bg-black text-white font-urbanist hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all"
               >
-            Book Call
+            {program?.buttonText || program?.subPilotData?.buttontext || 'Book Call'}
             {/* Arrow Icon */}
             <svg
               className="lg:w-[32px] lg:h-[32px] w-[24px] h-[24px] ml-2"

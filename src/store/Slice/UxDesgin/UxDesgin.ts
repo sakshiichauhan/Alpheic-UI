@@ -158,6 +158,9 @@ export interface ServicePageData {
 
   // Select Case Studies By Tag Section
   select_case_studies_by_tag?: SelectCaseStudiesByTagItem[];
+  
+  // Service name to track which service is loaded
+  name?: string;
 }
 
 interface ServicePageState {
@@ -175,7 +178,7 @@ const initialState: ServicePageState = {
 // Async thunk to fetch ServicePage data
 export const fetchServicePageData = createAsyncThunk(
   'uxDesign/fetchServicePageData',
-  async (_, { getState, rejectWithValue }) => {
+  async (serviceName: string, { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState;
       const token = state.auth.token;
@@ -184,7 +187,10 @@ export const fetchServicePageData = createAsyncThunk(
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('/api/resource/ServicePage L4/Page', {
+      // Fetch service data by name
+      const endpoint = `/api/resource/ServicePage L4/${encodeURIComponent(serviceName)}`;
+
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `token ${token}`,
@@ -202,6 +208,9 @@ export const fetchServicePageData = createAsyncThunk(
       const responseData = await response.json();
       // Handle response format: { "data": { ... } }
       const pageData = responseData.data || responseData;
+      
+      // Add service name to track which service is loaded
+      pageData.name = serviceName;
 
       // Fetch brand details for each item in service_brands_list
       if (pageData.service_brands_list && Array.isArray(pageData.service_brands_list)) {

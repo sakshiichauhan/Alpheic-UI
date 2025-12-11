@@ -1,27 +1,34 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
 import Spiral from "@/assets/Homepage/spiral.png"; 
 
-type Props = {
-  title?: string;
-  kicker?: string;
-  description?: string;
-  ctaPrimaryText?: string;
-  ctaPrimaryLink?: string;
-  ctaSecondaryText?: string;
-  ctaSecondaryLink?: string;
-  className?: string;
-};
+const PilotHeroSection: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.pilotPage);
 
-const PilotHeroSection: React.FC<Props> = ({
-  title = "Pilot by Alpheric",
-  kicker = "Start small. Learn fast. Scale smart.",
-  description = `Validate ideas and systems in 2 to 4 weeks. Fixed scope. Measurable outcomes. Real users.`,
-  ctaPrimaryText = "Explore Pilots",
-  ctaPrimaryLink = "/Pilot",
-  ctaSecondaryText = "Talk to a Strategist",
-  ctaSecondaryLink = "/LetsTalk",
-  className = "",
-}) => {
+  useEffect(() => {
+    if (!data && !loading) {
+      dispatch(fetchPilotPageData());
+    }
+  }, [data, loading, dispatch]);
+
+  if (!isEnabled(data?.herosection)) {
+    return null;
+  }
+
+  const title = stripHtml(data?.herosection_heading, "Pilot by Alpheric");
+  const kicker = stripHtml(data?.herosection_subheading, "Start small. Learn fast. Scale smart.");
+  const description = stripHtml(
+    data?.herosection_description,
+    "Validate ideas and systems in 2 to 4 weeks. Fixed scope. Measurable outcomes. Real users."
+  );
+  const ctaPrimaryText = data?.herosection_button1 || "Explore Pilots";
+  const ctaSecondaryText = data?.herosection_button2 || "Talk to a Strategist";
+  const ctaPrimaryLink = "/Pilot";
+  const ctaSecondaryLink = "/LetsTalk";
+  const className = "";
   return (
     <section
       className={`w-full relative ${className} bg-[radial-gradient(ellipse_70%_120%_at_right_top,#EDE6FE_20%,#FFFFFF_70%)] overflow-clip`}

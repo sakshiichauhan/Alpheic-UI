@@ -40,7 +40,7 @@ const IndustriesSection: React.FC = () => {
     if (!name) return '#';
     // Link to the industry page with the industry name as a route parameter
     // Format: /industry/Energy%20%26%20Environment
-    return `/industry/${encodeURIComponent(name)}`;
+    return `/Industries/${encodeURIComponent(name)}`;
   };
 
   return (

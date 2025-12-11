@@ -120,7 +120,7 @@ const WorkSection = ({
   // Fetch ServicePage data on mount
   useEffect(() => {
     if (!servicePageData && !servicePageLoading) {
-      dispatch(fetchServicePageData());
+      dispatch(fetchServicePageData('Page'));
     }
   }, [dispatch, servicePageData, servicePageLoading]);
 

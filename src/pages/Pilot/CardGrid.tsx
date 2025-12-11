@@ -1,7 +1,11 @@
 // PilotCardGrid.tsx
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilots, selectPilots, selectPilotLoading, buildPilotImageUrl } from "@/store/Slice/Pilot/PilotThunk";
 import { motion, type Variants } from "framer-motion"; 
-import { Calendar, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -32,6 +36,7 @@ type CardProps = {
   title: string;
   description: string;
   duration: string;
+  calendarIcon?: string;
 };
 
 // --- 1. Hover Card Component ---
@@ -40,6 +45,7 @@ const HoverCard: React.FC<CardProps> = ({
   title,
   description,
   duration,
+  calendarIcon,
 }) => {
   const navigate = useNavigate();
 
@@ -91,8 +97,20 @@ const HoverCard: React.FC<CardProps> = ({
         {/* 3. Bottom Row (pushed to bottom) */}
         <div className="flex justify-between items-center mt-auto md:pt-4 sm:pt-2">
           <div className="flex items-center gap-2 border border-[#F0F1F2] p-[8px]">
-            {/* Replaced with Lucid Icon */}
-            <Calendar size={16} className="text-[var(--medium-text)]" />
+            {/* Calendar icon from API */}
+            {calendarIcon ? (
+              <img
+                src={buildPilotImageUrl(calendarIcon)}
+                alt="Calendar"
+                className="w-4 h-4 object-contain"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  // Hide image if it fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            ) : null}
             <span className="2xl:text-[16px] xl:text-[14px] sm:text-[12px] text-[10px] text-[var(--medium-text)] font-urbanist font-medium">{duration}</span>
           </div>
 
@@ -106,33 +124,73 @@ const HoverCard: React.FC<CardProps> = ({
   );
 };
 
-// --- Dummy Data ---
-const cardData = [
-  {
-    title: "Dreamers",
-    description: "For those with a big idea and the courage to build it.",
-    duration: "2 to 4 weeks",
-  },
-  {
-    title: "Startups",
-    description: "Scale your product and find your market fit, fast.",
-    duration: "2 to 4 weeks",
-  },
-  {
-    title: "SMBs",
-    description: "Optimize operations and unlock new growth channels.",
-    duration: "2 to 4 weeks",
-  },
-  {
-    title: "Enterprises",
-    description: "Innovate at scale with robust, future-proof systems.",
-    duration: "2 to 4 weeks",
-  },
-];
-
 // --- 2. Card Grid Component (Default Export) ---
 
 const CardGrid = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading: pilotPageLoading } = useSelector((state: RootState) => state.pilotPage);
+  const pilots = useSelector(selectPilots);
+  const pilotsLoading = useSelector(selectPilotLoading);
+
+  // Pilot names to fetch
+  const pilotNames = ['Dreamer', 'Startups', 'SMBs', 'Enterprises'];
+
+  useEffect(() => {
+    if (!data && !pilotPageLoading) {
+      dispatch(fetchPilotPageData());
+    }
+  }, [data, pilotPageLoading, dispatch]);
+
+  useEffect(() => {
+    // Fetch all pilots if not already loaded
+    const pilotsToFetch = pilotNames.filter(name => !pilots[name]);
+    if (pilotsToFetch.length > 0) {
+      dispatch(fetchPilots(pilotsToFetch));
+    }
+  }, [dispatch, pilots]);
+
+  if (!isEnabled(data?.piolets)) {
+    return null;
+  }
+
+  // Map pilots data to card format
+  type CardData = {
+    title: string;
+    description: string;
+    duration: string;
+    calendarIcon?: string;
+  };
+
+  const cardData = pilotNames
+    .map((name): CardData | null => {
+      const pilot = pilots[name];
+      if (!pilot) return null;
+      return {
+        title: pilot.piolet_name || name,
+        description: pilot.description || '',
+        duration: pilot.time || '',
+        calendarIcon: pilot.calander_img || undefined,
+      };
+    })
+    .filter((card): card is CardData => card !== null);
+
+  // Show loading state or empty state
+  if (pilotsLoading && cardData.length === 0) {
+    return (
+      <section className="w-full 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:gap-[24px] gap-[16px]">
+          {pilotNames.map((name) => (
+            <div key={name} className="animate-pulse bg-gray-200 h-[200px] rounded" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (cardData.length === 0) {
+    return null;
+  }
+
   return (
     <section className="w-full 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:gap-[24px] gap-[16px]">
@@ -142,6 +200,7 @@ const CardGrid = () => {
             title={card.title}
             description={card.description}
             duration={card.duration}
+            calendarIcon={card.calendarIcon}
           />
         ))}
       </div>

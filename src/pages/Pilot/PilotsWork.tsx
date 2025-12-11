@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchPilotPageData, stripHtml, isEnabled, selectPilotBannerSteps } from "@/store/Slice/Pilot/PilotPageThunk";
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import o1 from "@/assets/CareerPage/o1.png";
 import o2 from "@/assets/CareerPage/o2.png";
@@ -6,15 +9,16 @@ import o3 from "@/assets/CareerPage/o3.png";
 import o4 from "@/assets/CareerPage/o4.png";
 
 // Define the type for a single hiring step
-interface HiringStep {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-}
+type PilotStep = {
+  id?: string;
+  title?: string;
+  description?: string;
+  duration?: string;
+  image?: string;
+};
 
 // Data for the hiring steps
-const hiringSteps: HiringStep[] = [
+const defaultSteps: PilotStep[] = [
   {
     id: '01',
     title: 'Discover',
@@ -41,7 +45,38 @@ const hiringSteps: HiringStep[] = [
   },
 ];
 
+const fallbackImages = [o1, o2, o3, o4];
+
 const PilotsWork: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.pilotPage);
+
+  useEffect(() => {
+    if (!data && !loading) {
+      dispatch(fetchPilotPageData());
+    }
+  }, [data, loading, dispatch]);
+
+  if (!isEnabled(data?.banner)) {
+    return null;
+  }
+
+  const title = stripHtml(data?.banner_name, 'How pilots work');
+  const bannerSteps = useMemo(() => selectPilotBannerSteps(data), [data]);
+
+  const stepsToRender: PilotStep[] = useMemo(() => {
+    if (bannerSteps && bannerSteps.length) {
+      return bannerSteps.map((step, index) => ({
+        id: String(index + 1).padStart(2, '0'),
+        title: step.name || `Step ${index + 1}`,
+        description: step.description || '',
+        duration: step.duration,
+        image: fallbackImages[index % fallbackImages.length],
+      }));
+    }
+    return defaultSteps;
+  }, [bannerSteps]);
+
   return (
     <section className="p-[24px]">
       
@@ -71,11 +106,11 @@ const PilotsWork: React.FC = () => {
       {/* Main content container - has z-10, so it's on top of everything else */}
       <div className="relative z-10 flex flex-col items-center gap-[42px]">
         <h2 className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[36px] text-[32px] font-semibold text-center">
-        How pilots work
+        {title}
         </h2>
         <div className="flex flex-col lg:flex-row gap-[24px] items-center lg:items-start w-full">
-          {hiringSteps.map((step, index) => (
-            <React.Fragment key={step.id}>
+          {stepsToRender.map((step, index) => (
+            <React.Fragment key={step.id || index}>
               <div className="relative flex flex-col items-center text-center bg-transparent w-full lg:w-auto">
                 {/* Step Number */}
                 <img src={step.image} alt={step.title} className="2xl:w-[94px] xl:w-[80px] lg:w-[64px] md:w-[52px] w-[46px] h-auto mb-[16px]" />
@@ -84,7 +119,12 @@ const PilotsWork: React.FC = () => {
                   {step.title}
                 </h3>
                 <p className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[16px] text-[14px] font-urbanist text-white w-full text-center px-4 sm:px-0 mx-auto">
-                  {step.description.split('<br/>').map((line, i, arr) => (
+                  {(
+                    (step.duration ? `${step.duration} <br/>` : '') +
+                    (step.description || '')
+                  )
+                    .split('<br/>')
+                    .map((line, i, arr) => (
                     <React.Fragment key={i}>
                       {line}
                       {i < arr.length - 1 && <br />}
@@ -93,7 +133,7 @@ const PilotsWork: React.FC = () => {
                 </p>
               </div>
               {/* Dotted line separator - only show between items (3 lines) */}
-              {index < hiringSteps.length - 1 && (
+              {index < stepsToRender.length - 1 && (
                 <>
                   {/* Vertical line for mobile/tablet */}
                   <div className="flex lg:hidden h-[60px] items-center justify-center">

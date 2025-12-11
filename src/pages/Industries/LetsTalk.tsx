@@ -98,7 +98,7 @@ const LetsTalk: React.FC = () => {
       }}
       className="flex items-center 2xl:text-[140px] xl:text-[120px] lg:text-[100px] md:text-[80px] sm:text-[60px] text-[32px] overflow-hidden"
     >
-      talk
+      tal
     </motion.span>
     
     <span className="sm:hidden absolute bottom-0 left-0 w-full h-[4px] bg-black 
