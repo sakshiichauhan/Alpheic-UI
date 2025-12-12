@@ -134,6 +134,8 @@ export interface DesignPageL2Data {
   faqs_list?: FAQsListItem[];
   consultants_list?: ConsultantsListItem[];
   insights_list?: DesignInsightItem[];
+  piolet_table?: number;
+  piolet_table_heading?: string;
 }
 
 interface DesignPageL2State {

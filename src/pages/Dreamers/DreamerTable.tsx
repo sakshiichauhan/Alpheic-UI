@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled } from "@/store/Slice/Pilot/PilotThunk";
@@ -30,22 +30,29 @@ type Program = {
   button2?: string;
 };
 
-const Table = () => {
+const Table: React.FC = () => {
+  // Get pilot name from URL params
+  const { pilotName } = useParams<{ pilotName?: string }>();
+  
+  // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
+  const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
+  const activePilotName = decodedPilotName || "Dreamer";
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const pilotData = useSelector((state: RootState) => selectPilot(state, "Dreamer"));
+  const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
   const pilotLoading = useSelector(selectPilotLoading);
   const subPilots = useSelector(selectSubPilots);
   const subPilotLoading = useSelector(selectSubPilotLoading);
   const [isViewScopeOpen, setIsViewScopeOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
 
-  // Fetch Dreamer pilot data
+  // Fetch pilot data dynamically
   useEffect(() => {
     if (!pilotData && !pilotLoading) {
-      dispatch(fetchPilotByName("Dreamer"));
+      dispatch(fetchPilotByName(activePilotName));
     }
-  }, [dispatch, pilotData, pilotLoading]);
+  }, [dispatch, pilotData, pilotLoading, activePilotName]);
 
   // Fetch sub-pilots when piolets_list is available
   useEffect(() => {
@@ -60,9 +67,25 @@ const Table = () => {
     }
   }, [dispatch, pilotData?.piolets_list, subPilots]);
 
-  if (!isPilotSectionEnabled(pilotData?.piolets)) {
+  // Check if section should be enabled - but wait for data to load first
+  // Only hide if we have data and it's explicitly disabled
+  const isSectionEnabled = pilotData ? isPilotSectionEnabled(pilotData?.piolets) : true;
+  
+  if (pilotData && !isSectionEnabled) {
     return null;
   }
+
+  // Helper function to map pilot name to valid category type
+  const getCategoryFromPilotName = (name: string): 'Dreamers' | 'Startups' | 'SMBs' | 'Enterprises' => {
+    const normalizedName = name.trim();
+    // Map common variations to valid categories
+    if (normalizedName === 'Dreamer' || normalizedName === 'Dreamers') return 'Dreamers';
+    if (normalizedName === 'Startup' || normalizedName === 'Startups') return 'Startups';
+    if (normalizedName === 'SMB' || normalizedName === 'SMBs') return 'SMBs';
+    if (normalizedName === 'Enterprise' || normalizedName === 'Enterprises') return 'Enterprises';
+    // Default fallback
+    return 'Dreamers';
+  };
 
   // Map sub-pilots to program format - only include programs with actual API data
   // Deduplicate by pilot name to avoid showing repeated entries
@@ -78,23 +101,23 @@ const Table = () => {
         // Only process if subPilot data exists and has been loaded from API
         if (!subPilot) return null;
         
-        const pilotName = subPilot.piolet || item.piolet || '';
+        const subPilotName = subPilot.piolet || item.piolet || '';
         
         // Skip if we've already seen this pilot name (deduplicate)
-        if (pilotName && seenPilots.has(pilotName)) {
+        if (subPilotName && seenPilots.has(subPilotName)) {
           return null;
         }
         
         // Mark this pilot as seen
-        if (pilotName) {
-          seenPilots.add(pilotName);
+        if (subPilotName) {
+          seenPilots.add(subPilotName);
         }
         
         const program: Program = {
           id: programId++,
-          category: 'Dreamers', // Set category for ViewScope compatibility
+          category: getCategoryFromPilotName(activePilotName), // Use the main pilot name for category
           objective: subPilot.short_objective || subPilot.objective || subPilot.objective_name || '',
-          pilot: pilotName,
+          pilot: subPilotName,
           serviceMix: subPilot.service_mix || subPilot.serviceMix || subPilot.service_mix_name || '',
           kpi: subPilot.primary_kpi || subPilot.kpi || subPilot.primary_kpi_name || '',
           duration: subPilot.duration || subPilot.duration_time || '',
@@ -125,7 +148,7 @@ const Table = () => {
         return program;
       })
       .filter((program): program is Program => program !== null);
-  }, [pilotData?.piolets_list, subPilots]); 
+  }, [pilotData?.piolets_list, subPilots, activePilotName]); 
 
   // Show loading state only if we're still loading and have no data
   if ((pilotLoading && !pilotData) || (subPilotLoading && programs.length === 0 && pilotData?.piolets_list && pilotData.piolets_list.length > 0)) {
@@ -141,12 +164,33 @@ const Table = () => {
     );
   }
 
-  // Don't render table if no programs available from API
-  if (programs.length === 0) {
-    return null;
+  // Show empty state if data is loaded but no programs available
+  const hasNoPrograms = pilotData && programs.length === 0;
+  
+  // If no programs and data is loaded, show empty state with heading
+  if (hasNoPrograms) {
+    const pilotDisplayName = pilotData?.piolet_name || pilotName;
+    const headingHtml = pilotData?.piolets_heading || `<div class="ql-editor read-mode"><p>These are all the sub piolets under <strong>${pilotDisplayName}</strong></p></div>`;
+    
+    return (
+      <section className="w-full px-4 sm:px-6 md:px-8 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-[40px] sm:py-[48px] md:py-[52px] lg:py-[64px]">
+        <div className="mx-auto flex flex-col items-center lg:gap-[32px] md:gap-[24px] gap-[16px]">
+          <ParsedHtml
+            htmlContent={headingHtml}
+            as="h2"
+            className="xl:text-[64px] lg:text-[52px] md:text-[40px] sm:text-[32px] text-[24px] tracking-tight text-black text-center"
+          />
+          <div className="w-full text-center py-8 text-gray-500">
+            No programs available for {pilotDisplayName}
+          </div>
+        </div>
+      </section>
+    );
   }
 
-  const headingHtml = pilotData?.piolets_heading || '<div class="ql-editor read-mode"><p>These are all the sub piolets under <strong>Dreamer</strong></p></div>';
+  // Dynamic heading based on pilot name
+  const pilotDisplayName = pilotData?.piolet_name || activePilotName;
+  const headingHtml = pilotData?.piolets_heading || `<div class="ql-editor read-mode"><p>These are all the sub piolets under <strong>${pilotDisplayName}</strong></p></div>`;
 
   const handleViewClick = (program: Program) => {
     setSelectedProgram(program);

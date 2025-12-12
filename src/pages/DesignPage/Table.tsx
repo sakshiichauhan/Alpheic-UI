@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData } from "@/store/Slice/Pilot/PilotPageThunk";
 import { fetchPilots, selectPilots, buildPilotImageUrl } from "@/store/Slice/Pilot/PilotThunk";
 import { fetchSubPilots, selectSubPilots, selectSubPilotLoading, selectSubPilotError } from "@/store/Slice/Pilot/SubPilotThunk";
+import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
 import { ParsedHtml } from "@/Components/ParsedHtml";
 import ViewScope from "@/Components/PopUp/ViewScope";
 import icon1 from "@/assets/Pilot_assets/Icon1.png";
@@ -58,7 +59,8 @@ type Program = {
 const Table = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { data, loading: pilotPageLoading } = useSelector((state: RootState) => state.pilotPage);
+  const { data: pilotPageData, loading: pilotPageLoading } = useSelector((state: RootState) => state.pilotPage);
+  const { data: designPageData, loading: designPageLoading } = useSelector((state: RootState) => state.designPageL2);
   const pilots = useSelector(selectPilots);
   const subPilots = useSelector(selectSubPilots);
   const subPilotLoading = useSelector(selectSubPilotLoading);
@@ -66,11 +68,18 @@ const Table = () => {
   const [isViewScopeOpen, setIsViewScopeOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
 
+  // Fetch design page data for table heading and flag
+  useEffect(() => {
+    if (!designPageData && !designPageLoading) {
+      dispatch(fetchDesignPageL2Data('Design'));
+    }
+  }, [dispatch, designPageData, designPageLoading]);
+
   // Get pilot names dynamically from piolets_tabs API or fallback to loaded pilots
   const defaultPilotNames = useMemo(() => {
     // First try to use piolets_tabs from API
-    if (data?.piolets_tabs && data.piolets_tabs.length > 0) {
-      const namesFromTabs = data.piolets_tabs
+    if (pilotPageData?.piolets_tabs && pilotPageData.piolets_tabs.length > 0) {
+      const namesFromTabs = pilotPageData.piolets_tabs
         .map(tab => tab.piolet_name)
         .filter((name): name is string => !!name);
       if (namesFromTabs.length > 0) {
@@ -84,11 +93,11 @@ const Table = () => {
     }
     // Final fallback: try common pilot names if we have pilot page data but no tabs
     // This handles cases where piolets_tabs might not be set but pilots exist
-    if (data) {
+    if (pilotPageData) {
       // Try to infer from piolets_list if available
-      if (data.piolets_list && data.piolets_list.length > 0) {
+      if (pilotPageData.piolets_list && pilotPageData.piolets_list.length > 0) {
         // Extract unique pilot names from piolets_list
-        const namesFromList = data.piolets_list
+        const namesFromList = pilotPageData.piolets_list
           .map(item => item.piolet_name)
           .filter((name): name is string => !!name);
         if (namesFromList.length > 0) {
@@ -98,14 +107,14 @@ const Table = () => {
     }
     // Final fallback: return empty array
     return [];
-  }, [data?.piolets_tabs, data?.piolets_list, pilots]);
+  }, [pilotPageData?.piolets_tabs, pilotPageData?.piolets_list, pilots]);
 
   // Fetch pilot page data
   useEffect(() => {
-    if (!data && !pilotPageLoading) {
+    if (!pilotPageData && !pilotPageLoading) {
       dispatch(fetchPilotPageData());
     }
-  }, [data, pilotPageLoading, dispatch]);
+  }, [pilotPageData, pilotPageLoading, dispatch]);
 
   // Fetch individual pilot data
   useEffect(() => {
@@ -117,12 +126,12 @@ const Table = () => {
 
   // Fallback: If we don't have pilot names yet but have pilot page data, try fetching common pilots
   useEffect(() => {
-    if (data && defaultPilotNames.length === 0 && Object.keys(pilots).length === 0) {
+    if (pilotPageData && defaultPilotNames.length === 0 && Object.keys(pilots).length === 0) {
       // Try fetching common pilot names as fallback
       const commonPilotNames = ['Dreamer', 'Startups', 'SMBs', 'Enterprises'];
       dispatch(fetchPilots(commonPilotNames));
     }
-  }, [dispatch, data, defaultPilotNames, pilots]);
+  }, [dispatch, pilotPageData, defaultPilotNames, pilots]);
 
   // Extract sub-pilot names from all pilots and fetch their details
   useEffect(() => {
@@ -150,8 +159,8 @@ const Table = () => {
   // Build tabs dynamically from API data
   const tabs: Array<{ name: TabCategory; apiName: string; icon?: string }> = useMemo(() => {
     // First try to use piolets_tabs from API
-    if (data?.piolets_tabs && data.piolets_tabs.length > 0) {
-      return data.piolets_tabs
+    if (pilotPageData?.piolets_tabs && pilotPageData.piolets_tabs.length > 0) {
+      return pilotPageData.piolets_tabs
         .map(tab => {
           const apiName = tab.piolet_name || '';
           const displayName = apiNameToDisplayName[apiName] || apiName as TabCategory;
@@ -195,7 +204,7 @@ const Table = () => {
     }
     
     return tabsFromPilots;
-  }, [data?.piolets_tabs, defaultPilotNames, pilots]);
+  }, [pilotPageData?.piolets_tabs, defaultPilotNames, pilots]);
 
   // Set initial active tab
   const initialTab = tabs.length > 0 ? tabs[0].name : undefined;
@@ -332,12 +341,13 @@ const Table = () => {
     navigate("/start-pilot", { state: { program } });
   };
 
-  // Get heading from API or use default
-  const headingHtml = data?.piolet_table_heading || '<h2>Who we design for</h2>';
+  // Get heading from DesignPageL2 API
+  const headingHtml = designPageData?.piolet_table_heading;
 
   // Don't render if table is explicitly disabled (but allow rendering while loading)
-  // Only hide if data is loaded and flag is explicitly 0
-  if (data && !isEnabled(data?.piolet_table)) {
+  // piolet_table === 1 means show, piolet_table === 0 means hide
+  // If undefined/null, show by default (allow rendering while loading)
+  if (designPageData && designPageData.piolet_table !== undefined && designPageData.piolet_table !== 1) {
     return null;
   }
 
@@ -345,11 +355,13 @@ const Table = () => {
     <section className="w-full px-4 sm:px-6 md:px-8 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-[40px] sm:py-[48px] md:py-[52px] lg:py-[64px]">
       <div className="mx-auto flex flex-col items-center lg:gap-[32px] md:gap-[24px] gap-[16px]">
         {/* Title */}
-        <ParsedHtml
-          htmlContent={headingHtml}
-          as="h2"
-          className="xl:text-[64px] lg:text-[52px] md:text-[40px] sm:text-[32px] text-[24px] tracking-tight text-black text-center"
-        />
+        {headingHtml && (
+          <ParsedHtml
+            htmlContent={headingHtml}
+            as="h2"
+            className="xl:text-[64px] lg:text-[52px] md:text-[40px] sm:text-[32px] text-[24px] tracking-tight text-black text-center"
+          />
+        )}
 
         {/* Tabs Section */}
         {pilotPageLoading ? (

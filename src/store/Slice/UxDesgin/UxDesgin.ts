@@ -46,6 +46,14 @@ export interface DesignConsultantListItem {
   role?: string;
 }
 
+export interface LinkedIndustryListItem {
+  name1?: string;
+  // Merged fields from Industry L2 API
+  industry_name?: string;
+  attach_image?: string;
+  icon?: string;
+}
+
 export interface SelectCaseStudiesByTagItem {
   pl_name: string;
   doctype: string;
@@ -93,6 +101,7 @@ export interface ServicePageData {
   // Industries Section
   linked_industries: number;
   linked_industries_heading: string;
+  linked_industries_list?: LinkedIndustryListItem[];
 
   // What We Offer / Service Hire Section
   service_hire: number;
@@ -299,6 +308,57 @@ export const fetchServicePageData = createAsyncThunk(
 
         // Update pageData with enriched consultants list
         pageData.design_consultants_list = enrichedConsultantsList;
+      }
+
+      // Fetch Industry L2 details for each item in linked_industries_list
+      if (pageData.linked_industries_list && Array.isArray(pageData.linked_industries_list)) {
+        const enrichedIndustriesList = await Promise.all(
+          pageData.linked_industries_list.map(async (industryItem: LinkedIndustryListItem) => {
+            try {
+              // Fetch industry details from Industry L2 API using name1 as the identifier
+              const industryName = industryItem.name1;
+              if (!industryName) {
+                console.warn('No name1 found for linked_industries_list item');
+                return industryItem;
+              }
+
+              const industryResponse = await fetch(
+                `/api/resource/Industry L2/${encodeURIComponent(industryName)}`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (industryResponse.ok) {
+                const industryData = await industryResponse.json();
+                const industryDetails = industryData.data || industryData;
+                
+                // Merge industry details into the item
+                return {
+                  ...industryItem,
+                  industry_name: industryDetails.industry_name || industryDetails.name || industryName,
+                  attach_image: industryDetails.attach_image || industryDetails.icon,
+                  icon: industryDetails.icon || industryDetails.attach_image,
+                };
+              } else {
+                // If industry fetch fails, return original item
+                console.warn(`Failed to fetch industry details for ${industryName}`);
+                return industryItem;
+              }
+            } catch (error) {
+              // If industry fetch fails, return original item
+              console.warn(`Error fetching industry details for ${industryItem.name1}:`, error);
+              return industryItem;
+            }
+          })
+        );
+
+        // Update pageData with enriched industries list
+        pageData.linked_industries_list = enrichedIndustriesList;
       }
 
       // Fetch Insights filtered by insight_tags

@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled } from "@/store/Slice/Pilot/PilotThunk";
@@ -6,15 +7,22 @@ import { ParsedHtml } from "@/Components/ParsedHtml";
 import Spiral from "@/assets/Homepage/spiral.png"; 
 
 const DreamersHomepage: React.FC = () => {
+  // Get pilot name from URL params
+  const { pilotName } = useParams<{ pilotName?: string }>();
+  
+  // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
+  const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
+  const activePilotName = decodedPilotName || "Dreamer";
+
   const dispatch = useDispatch<AppDispatch>();
-  const pilotData = useSelector((state: RootState) => selectPilot(state, "Dreamer"));
+  const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
   const loading = useSelector(selectPilotLoading);
 
   useEffect(() => {
     if (!pilotData && !loading) {
-      dispatch(fetchPilotByName("Dreamer"));
+      dispatch(fetchPilotByName(activePilotName));
     }
-  }, [dispatch, pilotData, loading]);
+  }, [dispatch, pilotData, loading, activePilotName]);
 
   if (!isPilotSectionEnabled(pilotData?.herosection)) {
     return null;
@@ -33,7 +41,7 @@ const DreamersHomepage: React.FC = () => {
   }
 
   // Get data from API with fallbacks
-  const kicker = pilotData?.piolet_name || "Dreamers";
+  const kicker = pilotData?.piolet_name || activePilotName || "Dreamers";
   const titleHtml = pilotData?.herosection_heading || '<div class="ql-editor read-mode"><p>Turn an idea into something people can <strong>see, use and trust</strong></p></div>';
   const description = pilotData?.herosection_subheading || "We help you name it, shape it, ship it. Quick, focused pilots that validate value in two to four weeks.";
   const ctaPrimaryText = pilotData?.herosection_button1 || "Dreamer Piolets";

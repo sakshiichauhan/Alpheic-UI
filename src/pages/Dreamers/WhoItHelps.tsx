@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
 import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled, buildPilotImageUrl } from '@/store/Slice/Pilot/PilotThunk';
@@ -42,15 +43,22 @@ const FeatureCard: React.FC<{
 // --- 3. Main Section Component ---
 
 const WhoItHelpsSection: React.FC = () => {
+  // Get pilot name from URL params
+  const { pilotName } = useParams<{ pilotName?: string }>();
+  
+  // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
+  const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
+  const activePilotName = decodedPilotName || "Dreamer";
+
   const dispatch = useDispatch<AppDispatch>();
-  const pilotData = useSelector((state: RootState) => selectPilot(state, "Dreamer"));
+  const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
   const loading = useSelector(selectPilotLoading);
 
   useEffect(() => {
     if (!pilotData && !loading) {
-      dispatch(fetchPilotByName("Dreamer"));
+      dispatch(fetchPilotByName(activePilotName));
     }
-  }, [dispatch, pilotData, loading]);
+  }, [dispatch, pilotData, loading, activePilotName]);
 
   if (!isPilotSectionEnabled(pilotData?.whoithelps)) {
     return null;

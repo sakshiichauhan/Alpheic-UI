@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { ChevronRight } from "lucide-react";
+import type { AppDispatch, RootState } from "@/store";
+import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
 import Indus1 from "@/assets/ServicePage/Industries/Indus1.png";
 import Indus2 from "@/assets/ServicePage/Industries/Indus2.png";
 import Indus3 from "@/assets/ServicePage/Industries/Indus3.png";
@@ -11,32 +14,77 @@ import Indus8 from "@/assets/ServicePage/Industries/Indus8.png";
 import Indus9 from "@/assets/ServicePage/Industries/Indus9.png";
 import ParsedHtml from "@/Components/ParsedHtml";
 
+// Helper function to build image URL
+const buildImageUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("/files/")) return `https://work.alpheric.com${path}`;
+  return `https://work.alpheric.com/files/${path}`;
+};
+
 interface Industry {
   id: number;
+  uniqueKey: string;
   name: string;
   icon: string;
   isHighlighted?: boolean;
 }
 
-const industries: Industry[] = [
-  { id: 1, name: "Education & Career Tech", icon: Indus1 },
-  { id: 2, name: "Customer Experience", icon: Indus2 },
-  { id: 3, name: "Retail & D2C Brands", icon: Indus3 },
-  { id: 4, name: "SaaS & Enterprise Tools", icon: Indus4 },
-  { id: 5, name: "Fintech & Data Platforms", icon: Indus5 },
-  { id: 6, name: "Health & Wellness Apps", icon: Indus6 },
-  { id: 7, name: "Clean Technology", icon: Indus7 },
-  { id: 8, name: "Shipping and Logistics", icon: Indus8, isHighlighted: true },
-  { id: 9, name: "Transportation", icon: Indus9 },
-];
+// Fallback icons array
+const fallbackIcons = [Indus1, Indus2, Indus3, Indus4, Indus5, Indus6, Indus7, Indus8, Indus9];
 
-const Industries: React.FC<{ className?: string; heading?: string }> = ({ 
+const Industries: React.FC<{ 
+  className?: string; 
+  heading?: string;
+  serviceName?: string;
+}> = ({ 
   className = "", 
-  heading 
+  heading,
+  serviceName
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, loading } = useSelector((state: RootState) => state.servicePage);
+  
+  // Fetch service page data if serviceName is provided and data doesn't match
+  useEffect(() => {
+    if (serviceName && (!data || data.name !== serviceName) && !loading) {
+      dispatch(fetchServicePageData(serviceName));
+    }
+  }, [dispatch, serviceName, data, loading]);
+  
+  // If no serviceName provided but we have data, use it (for cases where parent component already fetched)
+
+  // Map API data to Industry format
+  const industries: Industry[] = useMemo(() => {
+    if (data?.linked_industries_list && data.linked_industries_list.length > 0) {
+      return data.linked_industries_list.map((item, index) => {
+        const industryName = item.industry_name || item.name1 || '';
+        const iconUrl = item.icon || item.attach_image;
+        const icon = iconUrl ? buildImageUrl(iconUrl) : fallbackIcons[index % fallbackIcons.length];
+        // Use name1 as unique identifier, fallback to index if not available
+        const uniqueId = item.name1 || `industry-${index}`;
+        
+        return {
+          id: index + 1, // Keep numeric ID for highlighting logic
+          uniqueKey: uniqueId, // Use for React key prop
+          name: industryName,
+          icon: icon,
+          isHighlighted: false, // Can be set based on API data if needed
+        };
+      });
+    }
+    // Return empty array if no API data
+    return [];
+  }, [data?.linked_industries_list]);
+
   const [highlightedIds, setHighlightedIds] = useState<Set<number>>(
     new Set(industries.filter(i => i.isHighlighted).map(i => i.id))
   );
+
+  // Update highlightedIds when industries change
+  useEffect(() => {
+    setHighlightedIds(new Set(industries.filter(i => i.isHighlighted).map(i => i.id)));
+  }, [industries]);
 
   const handleClick = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,35 +99,49 @@ const Industries: React.FC<{ className?: string; heading?: string }> = ({
     });
   };
 
+  // Get heading from API or props
+  const displayHeading = heading || data?.linked_industries_heading;
+
+  // Don't render if linked_industries is 0 (disabled)
+  if (data && data.linked_industries !== undefined && data.linked_industries !== 1) {
+    return null;
+  }
+
+  // Don't render if no industries data
+  if (industries.length === 0 && !loading) {
+    return null;
+  }
+
   return (
     <section className={`w-full bg-white ${className}`} aria-labelledby="industries-heading">
       <div className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px]
  ">
         {/* Header */}
-        {heading ? (
+        {displayHeading ? (
           <ParsedHtml
-            htmlContent={heading}
+            htmlContent={displayHeading}
             as="h2"
             id="industries-heading"
             className="text-center text-[32px] md:text-[60px] lg:text-[72px]  2xl:mb-16 xl:mb-14 mb-6 md:mb-12 "
           />
-        ) : (
-          <h2
-            id="industries-heading"
-            className="text-center text-[32px] md:text-[60px] lg:text-[72px]  2xl:mb-16 xl:mb-14 mb-6 md:mb-12 "
-          >
-            Industries <span className="">We Empower</span>
-          </h2>
-        )}
+        ) : null}
 
         {/* Grid of Industries */}
-        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 2xl:gap-4 xl:gap-6 md:gap-6 gap-4">
-          {industries.map((industry, index) => {
-            const showDivider = index < 9; // Show divider for first two rows (items 0-5)
-            const isHighlighted = highlightedIds.has(industry.id);
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-[var(--medium-text)]">Loading industries...</div>
+          </div>
+        ) : industries.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 2xl:gap-4 xl:gap-6 md:gap-6 gap-4">
+            {industries.map((industry, index) => {
+              // Show divider for all items
+              // For exactly 3 items: show divider on all (including third card)
+              // For more than 3 items: show divider on all except the very last item
+              const showDivider = industries.length === 3 ? true : index < industries.length - 1;
+              const isHighlighted = highlightedIds.has(industry.id);
             
             return (
-              <div key={industry.id} className="relative">
+              <div key={industry.uniqueKey} className="relative">
                 <a
                   href="#"
                   onClick={(e) => handleClick(industry.id, e)}
@@ -124,7 +186,8 @@ const Industries: React.FC<{ className?: string; heading?: string }> = ({
               </div>
             );
           })}
-        </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

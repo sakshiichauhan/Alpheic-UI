@@ -70,7 +70,7 @@ function AppRoutes() {
         <Route path="/Industries/:industryName" element={<Technology />} />
         <Route path="/Services/:servicename/:name" element={<UxDesign />} />
       
-        <Route path="/Dreamers" element={<Dreamers />} />
+        <Route path="/Pilot/Dreamers/:pilotName?" element={<Dreamers />} />
         <Route path="/start-pilot" element={<StartPilotForm />} />
         <Route path="/new-business-inquiry" element={<NewBusinessInquiry />} />
         <Route path="/UxDesgin" element={<UxDesign />} />

@@ -15,7 +15,7 @@ type PilotStep = {
   title?: string;
   description?: string;
   duration?: string;
-  image?: string;
+  image: string; // Required - always use local images
 };
 
 // Data for the hiring steps
@@ -58,26 +58,30 @@ const PilotsWork: React.FC = () => {
     }
   }, [data, loading, dispatch]);
 
-  if (!isEnabled(data?.banner)) {
-    return null;
-  }
+  // Always render the component with images, even if banner is disabled
+  const isBannerEnabled = isEnabled(data?.banner);
 
   // Get HTML content from backend for banner name
   const titleHtml = data?.banner_name || '<p>How pilots work</p>';
   const bannerSteps = useMemo(() => selectPilotBannerSteps(data), [data]);
 
+  // Always render steps with local images
+  // If API data exists and banner is enabled, use API data but keep local images
   const stepsToRender: PilotStep[] = useMemo(() => {
-    if (bannerSteps && bannerSteps.length) {
+    if (isBannerEnabled && bannerSteps && bannerSteps.length > 0) {
+      // Use API data but always use local images
       return bannerSteps.map((step, index) => ({
         id: String(index + 1).padStart(2, '0'),
-        title: step.name || `Step ${index + 1}`,
-        description: step.description || '',
-        duration: step.duration,
+        title: step.name || defaultSteps[index]?.title || `Step ${index + 1}`,
+        description: step.description || defaultSteps[index]?.description || '',
+        duration: step.duration || defaultSteps[index]?.duration,
+        // Always use local imported images (o1, o2, o3, o4)
         image: fallbackImages[index % fallbackImages.length],
       }));
     }
+    // Always return default steps with local images
     return defaultSteps;
-  }, [bannerSteps]);
+  }, [bannerSteps, isBannerEnabled]);
 
   return (
     <section className="p-[24px]">
@@ -116,8 +120,18 @@ const PilotsWork: React.FC = () => {
           {stepsToRender.map((step, index) => (
             <React.Fragment key={step.id || index}>
               <div className="relative flex flex-col items-center text-center bg-transparent w-full lg:w-auto">
-                {/* Step Number */}
-                <img src={step.image} alt={step.title} className="2xl:w-[94px] xl:w-[80px] lg:w-[64px] md:w-[52px] w-[46px] h-auto mb-[16px]" />
+                {/* Step Number - Always show local images */}
+                <img 
+                  src={step.image} 
+                  alt={step.title || `Step ${index + 1}`} 
+                  className="2xl:w-[94px] xl:w-[80px] lg:w-[64px] md:w-[52px] w-[46px] h-auto mb-[16px]"
+                  onError={(e) => {
+                    // Fallback to default image if one fails
+                    const target = e.target as HTMLImageElement;
+                    const fallbackIndex = index % fallbackImages.length;
+                    target.src = fallbackImages[fallbackIndex];
+                  }}
+                />
 
                 <h3 className="2xl:text-[28px] xl:text-[26px] lg:text-[24px] md:text-[22px] text-[20px] font-semibold text-white mb-2">
                   {step.title}

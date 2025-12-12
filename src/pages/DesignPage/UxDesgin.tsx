@@ -194,7 +194,7 @@ export const UxDesign = () => {
           heading={data?.hire_card_heading}
           description={data?.hire_card_description}
           buttonData={data?.hire_card_buttondata}
-
+          image={data?.hire_card_image}
         />
       )}
       

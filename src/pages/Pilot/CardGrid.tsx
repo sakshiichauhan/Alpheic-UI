@@ -37,6 +37,7 @@ type CardProps = {
   description: string;
   duration: string;
   calendarIcon?: string;
+  pilotName: string; // The pilot name key for navigation
 };
 
 // --- 1. Hover Card Component ---
@@ -46,34 +47,27 @@ const HoverCard: React.FC<CardProps> = ({
   description,
   duration,
   calendarIcon,
+  pilotName,
 }) => {
   const navigate = useNavigate();
 
-  // Get route based on title
-  const getRoute = (cardTitle: string): string | null => {
-    const routeMap: Record<string, string> = {
-     
-      "Dreamer": "/Dreamers",
-      // Add other routes as they become available
-      // "Startups": "/Startups",
-      // "SMBs": "/SMBs",
-      // "Enterprises": "/Enterprises",
-    };
-    return routeMap[cardTitle] || null;
-  };
-
   const handleCardClick = () => {
-    const route = getRoute(title);
-    if (route) {
-      navigate(route);
+    // Navigate to Dreamers page with pilot name parameter
+    // For "Dreamer", use /Pilot/Dreamers, for others use /Pilot/Dreamers/:pilotName
+    if (pilotName === "Dreamer") {
+      navigate("/Pilot/Dreamers");
+    } else {
+      navigate(`/Pilot/Dreamers/${encodeURIComponent(pilotName)}`);
     }
   };
 
   const handleArrowClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click from firing
-    const route = getRoute(title);
-    if (route) {
-      navigate(route);
+    e.preventDefault();
+    e.stopPropagation();
+    if (pilotName === "Dreamer") {
+      navigate("/Pilot/Dreamers");
+    } else {
+      navigate(`/Pilot/Dreamers/${encodeURIComponent(pilotName)}`);
     }
   };
 
@@ -84,6 +78,14 @@ const HoverCard: React.FC<CardProps> = ({
       initial="initial" // Set initial animation state
       whileHover="hover" // Set state to animate to on hover
       onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
     >
       {/* 1. Animated Top Bar */}
       {/* This is the "track" for the bar */}
@@ -192,10 +194,11 @@ const CardGrid = () => {
     description: string;
     duration: string;
     calendarIcon?: string;
+    pilotKey?: string;
   };
 
   const cardData = pilotNames
-    .map((name): CardData | null => {
+    .map((name): (CardData & { pilotKey: string }) | null => {
       const pilot = pilots[name];
       if (!pilot) return null;
       
@@ -204,9 +207,10 @@ const CardGrid = () => {
         description: pilot.description || '',
         duration: pilot.time || '',
         calendarIcon: pilot.calander_img || undefined,
+        pilotKey: name, // Store the original pilot name as a unique key
       };
     })
-    .filter((card): card is CardData => card !== null);
+    .filter((card): card is CardData & { pilotKey: string } => card !== null);
 
   // Show loading state or empty state
   if (pilotsLoading && cardData.length === 0) {
@@ -228,13 +232,14 @@ const CardGrid = () => {
   return (
     <section className="w-full 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:gap-[24px] gap-[16px]">
-        {cardData.map((card) => (
+        {cardData.map((card, index) => (
           <HoverCard
-            key={card.title}
+            key={card.pilotKey || card.title || `card-${index}`}
             title={card.title}
             description={card.description}
             duration={card.duration}
             calendarIcon={card.calendarIcon}
+            pilotName={card.pilotKey}
           />
         ))}
       </div>

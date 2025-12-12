@@ -1,19 +1,36 @@
 import teamImage from "@/assets/ServicePage/HireDesigner.png";
 import ParsedHtml from "@/Components/ParsedHtml";
 
+// Helper function to build image URL (same pattern as DesignInsights.tsx)
+const getImageUrl = (path?: string | null) => {
+  if (!path) return "";
+  const trimmed = path.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("/files/")) return `https://work.alpheric.com${trimmed}`;
+  // Also handle full URLs
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return "";
+};
+
 interface HireDesignerProps {
   title?: string;
   heading?: string;
   description?: string;
   buttonData?: string;
+  image?: string;
 }
 
 const HireDesigner = ({ 
   title,
   heading,
   description,
-  buttonData
+  buttonData,
+  image
 }: HireDesignerProps) => {
+  // Build image URL from API or use fallback
+  const imageUrl = image ? getImageUrl(image) : null;
+  const displayImage = imageUrl || teamImage;
+
   return (
     <main className="px-4 sm:px-6 md:px-12 lg:px-20 xl:px-28 2xl:px-[200px] py-10 md:py-14 lg:py-16 xl:py-20 2xl:py-24">
       <section className="w-full">
@@ -23,9 +40,17 @@ const HireDesigner = ({
             {/* Image Section — first on mobile */}
             <div className="relative order-1 xl:order-2 h-52 sm:h-64 md:h-80 lg:h-96 xl:h-full">
               <img
-                src={teamImage}
+                src={displayImage}
                 alt="Professional team collaborating at a modern workspace"
                 className="absolute inset-0 w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  // Fallback to default image if API image fails to load
+                  const target = e.target as HTMLImageElement;
+                  if (imageUrl && target.src !== teamImage) {
+                    target.src = teamImage;
+                  }
+                }}
               />
             </div>
             {/* Text Section */}
