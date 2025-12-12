@@ -7,6 +7,7 @@ import ParsedHtml from "@/Components/ParsedHtml";
 import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
 import { fetchCaseStudiesByPlatformTags } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import { cleanNameForUrl } from "@/utils/urlMapping";
 import instagram from "@/assets/logo/insta.png";
 import linkedin from "@/assets/logo/linkdin.png";
 import dribbble from "@/assets/logo/dribble.png";
@@ -68,13 +69,8 @@ const isVideoFile = (attachPath: string | undefined | null): boolean => {
   return videoExtensions.some(ext => lowerPath.endsWith(ext));
 };
 
-// Helper function to generate slug from case study name
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
+// Import cleanNameForUrl utility
+import { cleanNameForUrl } from "@/utils/urlMapping";
 
 // Helper function to get first image from attachments (skip videos)
 const getFirstImage = (attachments: CaseStudyData['attachments']): string => {

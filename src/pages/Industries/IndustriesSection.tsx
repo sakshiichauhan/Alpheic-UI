@@ -38,9 +38,12 @@ const IndustriesSection: React.FC = () => {
   // Generate href from industry name - links to industry detail page
   const generateHref = (name: string | undefined): string => {
     if (!name) return '#';
-    // Link to the industry page with the industry name as a route parameter
-    // Format: /industry/Energy%20%26%20Environment
-    return `/Industries/${encodeURIComponent(name)}`;
+    // Clean the name: remove all non-alphabetic characters (spaces, special symbols, numbers)
+    // This ensures SEO-friendly URLs with only alphabets
+    const cleanedName = name.replace(/[^a-zA-Z]/g, '');
+    // Link to the industry page with the cleaned industry name as a route parameter
+    // Format: /Industries/EnergyEnvironment
+    return `/Industries/${cleanedName}`;
   };
 
   return (

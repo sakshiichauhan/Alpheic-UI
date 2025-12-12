@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
 import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import { fetchCaseStudyByName } from '@/store/Slice/CaseStudy/CaseStudyThunk';
 import { fetchBrandClientByName } from '@/store/Slice/BrandClientThunk';
+import { cleanNameForUrl } from '@/utils/urlMapping';
 import { ParsedHtml } from '@/Components/ParsedHtml';
 import Amber from "@/assets/Tools/Amber.png";
 
@@ -284,11 +285,12 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
                     {(() => {
-                      // Get the slug for the current slide
-                      const currentSlug = caseStudySlugs && caseStudySlugs[activeIndex] || caseStudySlug;
-                      return currentSlug ? (
+                      // Get the slug for the current slide and clean it
+                      const rawSlug = caseStudySlugs && caseStudySlugs[activeIndex] || caseStudySlug;
+                      const cleanedSlug = rawSlug ? cleanNameForUrl(rawSlug) : '';
+                      return cleanedSlug ? (
                         <Link
-                          to={`/case-study/${currentSlug}`}
+                          to={`/case-study/${cleanedSlug}`}
                           className="text-[16px] md:text-[18px] lg:text-[20px] xl:text-[22px] 2xl:text-[24px] font-urbanist font-semibold text-white flex items-center gap-[10px] hover:opacity-90 transition-opacity"
                         >
                           {headline} <div className="flex items-center justify-center bg-white/40 lg:p-[5px] md:p-[4px] sm:p-[3px] p-[2px]"><ArrowUpRight className="xl:h-[30px] xl:w-[30px] md:h-[20px] md:w-[20px] h-[14px] w-[14px]" strokeWidth={1} /></div>
@@ -317,17 +319,14 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
 // --- 3. Main Page Component ---
 
 const DesignPractice: React.FC = () => {
+  const { servicename } = useParams<{ servicename?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading } = useSelector((state: RootState) => state.designPageL2);
   const { caseStudies } = useSelector((state: RootState) => state.caseStudy);
   const { brandClients } = useSelector((state: RootState) => state.brandClient);
 
-  useEffect(() => {
-    // Fetch data if not already loaded
-    if (!data && !loading) {
-      dispatch(fetchDesignPageL2Data());
-    }
-  }, [dispatch, data, loading]);
+  // Get current service category name from URL or use default 'Design'
+  const currentServiceCategory = servicename || 'Design';
 
   // Fetch case studies and brand clients when linkServiceNames are available
   useEffect(() => {
@@ -385,12 +384,16 @@ const DesignPractice: React.FC = () => {
   
   // Helper function to generate href from service name - similar to industries
   const generateHref = (serviceName: string | undefined): string => {
-    if (!serviceName) return '/UxDesgin';
-    // Link to the service page with the service name as a route parameter
-    // Format: /services/design/{serviceName}
-    // The serviceName should match what ServicePage L4 expects
-    const href = `/services/design/${encodeURIComponent(serviceName)}`;
-    console.log('DesignPractice: Generated href:', href, 'for serviceName:', serviceName);
+    if (!serviceName) return `/Services/${currentServiceCategory}`;
+    // Clean the service name: remove all non-alphabetic characters (spaces, special symbols, numbers)
+    // This ensures SEO-friendly URLs with only alphabets
+    const cleanedServiceName = cleanNameForUrl(serviceName);
+    // Clean the current service category name for URL
+    const cleanedCategoryName = cleanNameForUrl(currentServiceCategory);
+    // Link to the service detail page with dynamic service category and cleaned service name
+    // Format: /Services/{categoryName}/{serviceName}
+    const href = `/Services/${cleanedCategoryName}/${cleanedServiceName}`;
+    console.log('DesignPractice: Generated href:', href, 'for serviceName:', serviceName, 'category:', currentServiceCategory);
     return href;
   };
 
@@ -499,8 +502,8 @@ const DesignPractice: React.FC = () => {
           services: getServices(item), // From ServicePage L3
           imagePosition,
           gallery, // From CaseStudy API - LIMITED TO 4 ITEMS
-          caseStudySlug: validSlides[0]?.case_study_slug, // First case study slug for backward compatibility
-          caseStudySlugs: validSlides.slice(0, 4).map(slide => slide.case_study_slug || '').filter(Boolean), // Limited to 4 case study slugs for current slide linking
+          caseStudySlug: validSlides[0]?.case_study_slug ? cleanNameForUrl(validSlides[0].case_study_slug) : undefined, // First case study slug (cleaned) for backward compatibility
+          caseStudySlugs: validSlides.slice(0, 4).map(slide => slide.case_study_slug ? cleanNameForUrl(slide.case_study_slug) : '').filter(Boolean), // Limited to 4 case study slugs (cleaned) for current slide linking
         };
       })
       .filter((card): card is NonNullable<typeof card> => card !== null);

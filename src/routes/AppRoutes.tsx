@@ -7,7 +7,6 @@ import { UxDesign } from '@/pages/DesignPage/UxDesgin';
 // Route components
 import { Pilot } from "@/pages/Pilot"
 import { Consult } from "@/pages/Consult"
-import { DesignPage } from "@/pages/DesignPage"
 import { Build } from "@/pages/Build"
 import { Host } from "@/pages/Host"
 import Secure from "@/pages/Secure"
@@ -26,12 +25,13 @@ import { ContactUs } from "@/pages/ContactUs"
 import CaseStudy from "@/pages/CaseStudy"
 import { ThankYouWrapper } from "@/pages/ThankYou/ThankYouWrapper"
 import JobDetailsPage from "@/pages/JobDetails/JobDetailsPage"
-import { Technology } from '@/pages/OurServices/Technology'
+import { Technology } from '@/pages/Technology'
 
 import { Dreamers } from '@/pages/Pilot/Dreamers'
 import StartPilotForm from '@/pages/Pilot/StartPilotForm'
 import { NewBusinessInquiry } from '@/pages/Contractus/NewBusinessInquiry';
 import { Services } from '@/pages/Services';
+import { ServiceCategoryPage } from '@/pages/ServiceCategoryPage';
 function AppRoutes() {
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/thank-you');
@@ -46,7 +46,7 @@ function AppRoutes() {
         } />
         <Route path="/Pilot" element={<Pilot />} />
         <Route path="/Consult" element={<Consult />} />
-        <Route path="/Design" element={<DesignPage />} />
+        <Route path="/Services/:servicename" element={<ServiceCategoryPage />} />
         <Route path="/Build" element={<Build />} />
         <Route path="/Host" element={<Host />} />
         <Route path="/Secure" element={<Secure />} />
@@ -60,15 +60,15 @@ function AppRoutes() {
         <Route path="/Industries" element={<Industries />} />
         <Route path="/Services" element={<Services />} />
         <Route path="/Insights" element={<Insights />} />
-        <Route path="/About Us" element={<AboutUs />} />
-        <Route path="/Contact Us" element={<ContactUs />} />
+        <Route path="/AboutUs" element={<AboutUs />} />
+        <Route path="/ContactUs" element={<ContactUs />} />
         <Route path="/case-study/:slug" element={<CaseStudy />} />
         <Route path="/thank-you/:type" element={<ThankYouWrapper />} />
         <Route path="/thank-you" element={<ThankYouWrapper />} />
         <Route path="/Technology" element={<Technology />} />
         
         <Route path="/Industries/:industryName" element={<Technology />} />
-        <Route path="/services/design/:name" element={<UxDesign />} />
+        <Route path="/Services/:servicename/:name" element={<UxDesign />} />
       
         <Route path="/Dreamers" element={<Dreamers />} />
         <Route path="/start-pilot" element={<StartPilotForm />} />

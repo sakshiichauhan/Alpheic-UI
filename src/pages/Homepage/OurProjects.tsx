@@ -10,6 +10,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import type { RootState } from "@/store/rootReducer";
+import { cleanNameForUrl } from "@/utils/urlMapping";
 
 type Project = {
   id: string;
@@ -25,14 +26,6 @@ type Project = {
   bgColor: string;          // background color for summary card
   caseStudySlug?: string;   // slug for internal case-study route
   caseStudyName?: string;   // API identifier (e.g., "CaseStudy-0014")
-};
-
-// Helper function to generate slug from case study name
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 };
 
 // Default background colors for projects (cycling through)
@@ -347,7 +340,7 @@ export default function OurProjects() {
     // Slice to show only first 4 case studies
     return caseStudyArray.slice(0, 4).map((caseStudyData, index) => {
       const caseStudyName = caseStudyData.name;
-      const slug = generateSlug(caseStudyName);
+      const slug = cleanNameForUrl(caseStudyName);
       
       // Get background color (cycle through default colors)
       const bgColor = defaultBgColors[index % defaultBgColors.length];

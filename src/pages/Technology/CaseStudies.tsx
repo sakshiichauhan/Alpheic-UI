@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchIndustryL2Data } from "@/store/Slice/IndustryPage/TechnologyPageThunk";
 import { fetchCaseStudiesByIndustry } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import { findOriginalIndustryName, cleanNameForUrl } from "@/utils/urlMapping";
 import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { ArrowUpRight} from "lucide-react";
 import { DefaultButton } from "@/Components/Button";
@@ -52,13 +53,8 @@ const isVideoFile = (attachPath: string | undefined | null): boolean => {
   return videoExtensions.some(ext => lowerPath.endsWith(ext));
 };
 
-// Helper function to generate slug from case study name
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
+// Import cleanNameForUrl utility
+import { cleanNameForUrl } from "@/utils/urlMapping";
 
 // Helper function to get first image from attachments (skip videos)
 const getFirstImage = (attachments: CaseStudyData['attachments']): string => {
@@ -93,14 +89,22 @@ const WorkSection: React.FC<WorkSectionProps> = ({
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading } = useSelector((state: RootState) => state.technologyPage);
   const { caseStudies, loading: caseStudyLoading } = useSelector((state: RootState) => state.caseStudy);
+  const { l2Cards } = useSelector((state: RootState) => state.industryPage);
 
-  // Get industry name from route or use default
-  const currentIndustry = industryName ? decodeURIComponent(industryName) : "Energy & Environment";
+  // Map cleaned URL name back to original industry name for API calls
+  const currentIndustry = useMemo(() => {
+    if (!industryName) return "Energy & Environment";
+    
+    const industryNames = l2Cards.map(card => card.name).filter(Boolean) as string[];
+    const originalName = findOriginalIndustryName(industryName, industryNames);
+    
+    return originalName || industryName;
+  }, [industryName, l2Cards]);
 
   useEffect(() => {
     // Fetch industry data on component mount
     if (!data || data.name !== currentIndustry) {
-      if (!loading) {
+      if (!loading && currentIndustry) {
         dispatch(fetchIndustryL2Data(currentIndustry));
       }
     }
@@ -131,7 +135,7 @@ const WorkSection: React.FC<WorkSectionProps> = ({
     );
 
     return filteredCaseStudies.map((caseStudy, index) => {
-      const slug = generateSlug(caseStudy.name);
+      const slug = cleanNameForUrl(caseStudy.name);
       const imageUrl = getFirstImage(caseStudy.attachments);
       const bgColor = defaultBgColors[index % defaultBgColors.length];
       
