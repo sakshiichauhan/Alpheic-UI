@@ -43,7 +43,7 @@ const DesignSection: React.FC = () => {
   useEffect(() => {
     // Fetch design page L2 data on component mount
     if (!data && !loading) {
-      dispatch(fetchDesignPageL2Data());
+      dispatch(fetchDesignPageL2Data('Design'));
     }
   }, [dispatch, data, loading]);
 

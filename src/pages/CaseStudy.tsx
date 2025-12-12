@@ -5,7 +5,7 @@ import type { RootState } from "@/store/rootReducer";
 import type { AppDispatch } from "@/store";
 import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
-import { findOriginalCaseStudyName, cleanNameForUrl } from "@/utils/urlMapping";
+import { findOriginalCaseStudyName } from "@/utils/urlMapping";
 import { ArrowUpRight } from "lucide-react";
 
 // Helper function to convert API attachment path to full URL

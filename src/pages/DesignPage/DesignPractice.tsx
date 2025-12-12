@@ -4,7 +4,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
-import { fetchDesignPageL2Data, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
+import type { LinkServiceNameItem } from '@/store/Slice/UxDesgin/DesginPageThunk';
 import { fetchCaseStudyByName } from '@/store/Slice/CaseStudy/CaseStudyThunk';
 import { fetchBrandClientByName } from '@/store/Slice/BrandClientThunk';
 import { cleanNameForUrl } from '@/utils/urlMapping';
@@ -321,7 +321,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
 const DesignPractice: React.FC = () => {
   const { servicename } = useParams<{ servicename?: string }>();
   const dispatch = useDispatch<AppDispatch>();
-  const { data, loading } = useSelector((state: RootState) => state.designPageL2);
+  const { data } = useSelector((state: RootState) => state.designPageL2);
   const { caseStudies } = useSelector((state: RootState) => state.caseStudy);
   const { brandClients } = useSelector((state: RootState) => state.brandClient);
 

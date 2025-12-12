@@ -69,9 +69,6 @@ const isVideoFile = (attachPath: string | undefined | null): boolean => {
   return videoExtensions.some(ext => lowerPath.endsWith(ext));
 };
 
-// Import cleanNameForUrl utility
-import { cleanNameForUrl } from "@/utils/urlMapping";
-
 // Helper function to get first image from attachments (skip videos)
 const getFirstImage = (attachments: CaseStudyData['attachments']): string => {
   if (!attachments || !Array.isArray(attachments)) {
@@ -170,7 +167,7 @@ const WorkSection = ({
   // Convert case studies to project cards format
   const projects = useMemo(() => {
     return filteredCaseStudies.map((caseStudy, index) => {
-      const slug = generateSlug(caseStudy.name);
+      const slug = cleanNameForUrl(caseStudy.name);
       const imageUrl = getFirstImage(caseStudy.attachments);
       const bgColor = defaultBgColors[index % defaultBgColors.length];
       

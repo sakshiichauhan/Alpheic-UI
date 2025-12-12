@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
 import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
-import { findOriginalServiceName, cleanNameForUrl } from "@/utils/urlMapping";
+import { findOriginalServiceName } from "@/utils/urlMapping";
 import UiDesgin from "@/pages/Services/UiDesgin";
 // import HumanCenter from "@/pages/Services/HumanCenter";
 import WhyChooseUs from "@/pages/Services/WhyChooseUs";
@@ -22,7 +22,7 @@ import DesignExpert from "@/pages/Services/DesignExpert";
 import Industries from "@/pages/Services/Industries";
 
 export const UxDesign = () => {
-  const { name, servicename } = useParams<{ name?: string; servicename?: string }>();
+  const { name } = useParams<{ name?: string; servicename?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading, error } = useSelector((state: RootState) => state.servicePage);
   const { data: designPageL2Data, loading: designPageL2Loading } = useSelector((state: RootState) => state.designPageL2);

@@ -53,9 +53,6 @@ const isVideoFile = (attachPath: string | undefined | null): boolean => {
   return videoExtensions.some(ext => lowerPath.endsWith(ext));
 };
 
-// Import cleanNameForUrl utility
-import { cleanNameForUrl } from "@/utils/urlMapping";
-
 // Helper function to get first image from attachments (skip videos)
 const getFirstImage = (attachments: CaseStudyData['attachments']): string => {
   if (!attachments || !Array.isArray(attachments)) {
