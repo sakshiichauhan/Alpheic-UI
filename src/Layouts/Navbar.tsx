@@ -30,7 +30,7 @@ const MENU: MenuItem[] = [
   { 
     id: "Services", label: "Services", href: "/Services",
     items: [
-      { id: "Design", label: "Design", href: "/Design" },
+      { id: "Design", label: "Design", href: "/Services/Design" },
       // { id: "Build", label: "Build", href: "/Build" },
       // { id: "Secure", label: "Secure", href: "/Secure" },
       // { id: "Host", label: "Host", href: "/Host" },

@@ -15,7 +15,7 @@ const CallToActionBanner = () => {
   useEffect(() => {
     // Fetch data if not already loaded
     if (!data && !loading) {
-      dispatch(fetchDesignPageL2Data());
+      dispatch(fetchDesignPageL2Data('Design'));
     }
   }, [dispatch, data, loading]);
 

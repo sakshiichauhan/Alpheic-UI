@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "@/store/rootReducer";
 import type { AppDispatch } from "@/store";
 import type { CaseStudyData } from "@/store/Slice/CaseStudy/CaseStudyThunk";
 import { fetchAllCaseStudies } from "@/store/Slice/CaseStudy/CaseStudyThunk";
+import { findOriginalCaseStudyName } from "@/utils/urlMapping";
 import { ArrowUpRight } from "lucide-react";
-
-
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
 
 // Helper function to convert API attachment path to full URL
 const getImageUrl = (attachPath: string | undefined | null): string => {
@@ -388,10 +381,24 @@ const CaseStudyPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { caseStudies, loading, error } = useSelector((state: RootState) => state.caseStudy);
 
-  // Find case study by slug (match by name after converting to slug)
-  const caseStudyData = Object.values(caseStudies).find(
-    (cs) => generateSlug(cs.name) === slug
-  );
+  // Map cleaned slug back to original case study name
+  const caseStudyName = useMemo(() => {
+    if (!slug) return null;
+    
+    // Get list of case study names
+    const caseStudyNames = Object.values(caseStudies).map(cs => cs.name).filter(Boolean) as string[];
+    
+    // Find original name that matches when cleaned
+    const originalName = findOriginalCaseStudyName(slug, caseStudyNames);
+    
+    return originalName;
+  }, [slug, caseStudies]);
+
+  // Find case study by original name
+  const caseStudyData = useMemo(() => {
+    if (!caseStudyName) return undefined;
+    return Object.values(caseStudies).find(cs => cs.name === caseStudyName);
+  }, [caseStudyName, caseStudies]);
 
   // Fetch all case studies if not already loaded or if case study not found
   useEffect(() => {

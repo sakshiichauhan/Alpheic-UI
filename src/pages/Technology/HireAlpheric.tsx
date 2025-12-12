@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchIndustryL2Data } from "@/store/Slice/IndustryPage/TechnologyPageThunk";
+import { findOriginalIndustryName } from "@/utils/urlMapping";
 import lightning from "@/assets/AboutUsPage/Lightning.png";
 import {ArrowUpRight} from "lucide-react"
 import { DefaultButton } from "@/Components/Button";
@@ -47,14 +48,22 @@ const HireAlpheric: React.FC<HireAlphericProps> = ({
   const { industryName } = useParams<{ industryName?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading } = useSelector((state: RootState) => state.technologyPage);
+  const { l2Cards } = useSelector((state: RootState) => state.industryPage);
 
-  // Get industry name from route or use default
-  const currentIndustry = industryName ? decodeURIComponent(industryName) : "Energy & Environment";
+  // Map cleaned URL name back to original industry name for API calls
+  const currentIndustry = useMemo(() => {
+    if (!industryName) return "Energy & Environment";
+    
+    const industryNames = l2Cards.map(card => card.name).filter(Boolean) as string[];
+    const originalName = findOriginalIndustryName(industryName, industryNames);
+    
+    return originalName || industryName;
+  }, [industryName, l2Cards]);
 
   useEffect(() => {
     // Fetch industry data on component mount
     if (!data || data.name !== currentIndustry) {
-      if (!loading) {
+      if (!loading && currentIndustry) {
         dispatch(fetchIndustryL2Data(currentIndustry));
       }
     }

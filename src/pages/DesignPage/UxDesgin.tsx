@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
+import { fetchDesignPageL2Data } from "@/store/Slice/UxDesgin/DesginPageThunk";
+import { findOriginalServiceName } from "@/utils/urlMapping";
 import UiDesgin from "@/pages/Services/UiDesgin";
 // import HumanCenter from "@/pages/Services/HumanCenter";
 import WhyChooseUs from "@/pages/Services/WhyChooseUs";
@@ -20,12 +22,45 @@ import DesignExpert from "@/pages/Services/DesignExpert";
 import Industries from "@/pages/Services/Industries";
 
 export const UxDesign = () => {
-  const { name } = useParams<{ name?: string }>();
+  const { name } = useParams<{ name?: string; servicename?: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading, error } = useSelector((state: RootState) => state.servicePage);
+  const { data: designPageL2Data, loading: designPageL2Loading } = useSelector((state: RootState) => state.designPageL2);
 
-  // Get service name from route or use default 'Page'
-  const currentService = name ? decodeURIComponent(name) : 'Page';
+  // Fetch DesignPageL2 data if not loaded (needed for mapping service names)
+  useEffect(() => {
+    if (!designPageL2Data && !designPageL2Loading) {
+      // For now, default to Design category
+      // In the future, map servicename back to original category name
+      dispatch(fetchDesignPageL2Data('Design'));
+    }
+  }, [dispatch, designPageL2Data, designPageL2Loading]);
+
+  // Map cleaned URL service name back to original service name for API calls
+  const currentService = useMemo(() => {
+    if (!name) return 'Page'; // Default fallback
+    
+    // Get list of service names from DesignPageL2 data
+    const serviceNames: string[] = [];
+    if (designPageL2Data?.link_service_names) {
+      designPageL2Data.link_service_names.forEach(linkItem => {
+        if (linkItem.service_category_services) {
+          linkItem.service_category_services.forEach(service => {
+            const serviceName = service.service || service.name || '';
+            if (serviceName && !serviceNames.includes(serviceName)) {
+              serviceNames.push(serviceName);
+            }
+          });
+        }
+      });
+    }
+    
+    // Find original name that matches when cleaned
+    const originalName = findOriginalServiceName(name, serviceNames);
+    
+    // If found, use it; otherwise fallback to the cleaned name
+    return originalName || name;
+  }, [name, designPageL2Data]);
 
   useEffect(() => {
     // Fetch service data on component mount or when service name changes

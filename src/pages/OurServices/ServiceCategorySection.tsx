@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
 import { fetchServicePageL1Data, type SelectServiceCategoryItem, type LinkServiceNameItem } from '@/store/Slice/UxDesgin/ServiceThunk';
+import { cleanNameForUrl } from '@/utils/urlMapping';
 import ServiceCard from '@/Components/ServiceCard';
 
 const ServiceCategorySection: React.FC = () => {
@@ -45,6 +46,11 @@ const ServiceCategorySection: React.FC = () => {
         const title = category.service_category_card_title || '';
         const subtitle = category.service_category_card_subtitle || '';
         const description = category.service_category_card_description || '';
+        
+        // Get cleaned service category name for URL
+        const serviceCategoryName = category.select || '';
+        const cleanedCategoryName = cleanNameForUrl(serviceCategoryName);
+        const categoryHref = cleanedCategoryName ? `/Services/${cleanedCategoryName}` : '/Services/Design';
 
         return (
           <section 
@@ -86,7 +92,7 @@ const ServiceCategorySection: React.FC = () => {
                       <ServiceCard
                         title={service.title}
                         description={service.desc}
-                        href="/Design"
+                        href={categoryHref}
                       />
                     </div>
                   );

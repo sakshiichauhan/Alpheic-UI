@@ -140,18 +140,20 @@ interface DesignPageL2State {
   data: DesignPageL2Data | null;
   loading: boolean;
   error: string | null;
+  serviceName: string | null; // Track which service name was used to fetch the current data
 }
 
 const initialState: DesignPageL2State = {
   data: null,
   loading: false,
   error: null,
+  serviceName: null,
 };
 
-// Async thunk to fetch Design Page L2 data
+// Async thunk to fetch Service Page L2 data (now accepts service name parameter)
 export const fetchDesignPageL2Data = createAsyncThunk(
   'designPageL2/fetchDesignPageL2Data',
-  async (_, { getState, rejectWithValue }) => {
+  async (serviceName: string = 'Design', { getState, rejectWithValue }) => {
     try {
       const state = getState() as RootState;
       const token = state.auth.token;
@@ -160,7 +162,7 @@ export const fetchDesignPageL2Data = createAsyncThunk(
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('/api/resource/ServicePage L2/Design', {
+      const response = await fetch(`/api/resource/ServicePage L2/${encodeURIComponent(serviceName)}`, {
         method: 'GET',
         headers: {
           'Authorization': `token ${token}`,
@@ -671,6 +673,7 @@ const designPageL2Slice = createSlice({
   reducers: {
     clearDesignPageL2Data: (state) => {
       state.data = null;
+      state.serviceName = null;
       state.error = null;
     },
   },
@@ -683,6 +686,7 @@ const designPageL2Slice = createSlice({
       .addCase(fetchDesignPageL2Data.fulfilled, (state, action) => {
         state.loading = false;
         state.data = action.payload;
+        state.serviceName = action.meta.arg || null; // Store the service name used to fetch this data
         state.error = null;
       })
       .addCase(fetchDesignPageL2Data.rejected, (state, action) => {
