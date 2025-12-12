@@ -37,7 +37,6 @@ type CardProps = {
   description: string;
   duration: string;
   calendarIcon?: string;
-  isActive?: boolean;
 };
 
 // --- 1. Hover Card Component ---
@@ -47,7 +46,6 @@ const HoverCard: React.FC<CardProps> = ({
   description,
   duration,
   calendarIcon,
-  isActive = true,
 }) => {
   const navigate = useNavigate();
 
@@ -65,8 +63,6 @@ const HoverCard: React.FC<CardProps> = ({
   };
 
   const handleCardClick = () => {
-    // Only navigate if card is active
-    if (!isActive) return;
     const route = getRoute(title);
     if (route) {
       navigate(route);
@@ -75,8 +71,6 @@ const HoverCard: React.FC<CardProps> = ({
 
   const handleArrowClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click from firing
-    // Only navigate if card is active
-    if (!isActive) return;
     const route = getRoute(title);
     if (route) {
       navigate(route);
@@ -198,7 +192,6 @@ const CardGrid = () => {
     description: string;
     duration: string;
     calendarIcon?: string;
-    isActive: boolean;
   };
 
   const cardData = pilotNames
@@ -206,15 +199,11 @@ const CardGrid = () => {
       const pilot = pilots[name];
       if (!pilot) return null;
       
-      // Only include cards where active === 1 (page is visible)
-      if (pilot.active !== 1) return null;
-      
       return {
         title: pilot.piolet_name || name,
         description: pilot.description || '',
         duration: pilot.time || '',
         calendarIcon: pilot.calander_img || undefined,
-        isActive: true, // All cards in this array are active
       };
     })
     .filter((card): card is CardData => card !== null);
@@ -246,7 +235,6 @@ const CardGrid = () => {
             description={card.description}
             duration={card.duration}
             calendarIcon={card.calendarIcon}
-            isActive={card.isActive}
           />
         ))}
       </div>

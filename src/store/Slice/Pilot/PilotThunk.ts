@@ -244,9 +244,33 @@ const pilotSlice = createSlice({
 });
 
 export const { clearPilot } = pilotSlice.actions;
-export const selectPilot = (state: RootState, name: string) =>
-  state.pilot.pilots[name];
-export const selectPilots = (state: RootState) => state.pilot.pilots;
+
+// Selector for a single pilot - only returns if active === 1
+export const selectPilot = (state: RootState, name: string) => {
+  const pilot = state.pilot.pilots[name];
+  // Only return pilot if active === 1, otherwise return undefined
+  if (!pilot || pilot.active !== 1) {
+    return undefined;
+  }
+  return pilot;
+};
+
+// Selector for all pilots - only returns pilots where active === 1
+export const selectPilots = (state: RootState) => {
+  const allPilots = state.pilot.pilots;
+  const activePilots: Record<string, PilotData> = {};
+  
+  Object.keys(allPilots).forEach((name) => {
+    const pilot = allPilots[name];
+    // Only include pilots where active === 1
+    if (pilot && pilot.active === 1) {
+      activePilots[name] = pilot;
+    }
+  });
+  
+  return activePilots;
+};
+
 export const selectPilotLoading = (state: RootState) => state.pilot.loading;
 export const selectPilotError = (state: RootState) => state.pilot.error;
 
