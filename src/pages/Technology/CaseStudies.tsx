@@ -249,7 +249,7 @@ const ProjectCard = ({ category, title, subtitle, bgColor, image, link }: Projec
             <img
               src={image}
               alt={title}
-              className="2xl:w-full 2xl:h-full w-full h-[202px] object-cover"
+              className="w-full lg:h-[202px] 2xl:h-[250px] h-[180px] object-cover"
               referrerPolicy="no-referrer"
             />
           </div>

@@ -20,32 +20,7 @@ interface WhatDeliverProps {
   className?: string;
 }
 
-const FeatureCard = ({ title, description, index, totalItems, image }: FeatureCardProps) => {
-  // Calculate grid positions
-  const cols2 = 2; // grid-cols-2 (mobile and md)
-  const cols3 = 3; // lg:grid-cols-3
-  
-  // For 2-column layout (mobile and md)
-  const isLastInRow2 = (index + 1) % cols2 === 0; // Right column: indices 1, 3, 5
-  const isLastRow2 = index >= totalItems - cols2; // Last row: indices 4, 5
-  
-  // For 3-column layout (lg+)
-  const isLastInRow3 = (index + 1) % cols3 === 0; // Right column: indices 2, 5
-  const isLastRow3 = index >= totalItems - cols3; // Last row: indices 3, 4, 5
-  
-  // Build border classes - always top and left, conditional right and bottom
-  const baseRightBorder = isLastInRow2 ? "border-r border-[#CCEEF4]" : "border-r-0";
-  const baseBottomBorder = isLastRow2 ? "border-b border-[#CCEEF4]" : "border-b-0";
-  const lgRightBorder = isLastInRow3 ? "lg:border-r lg:border-[#CCEEF4]" : "lg:border-r-0";
-  const lgBottomBorder = isLastRow3 ? "lg:border-b lg:border-[#CCEEF4]" : "lg:border-b-0";
-  
-  const borderClasses = [
-    "border-t border-l border-[#CCEEF4]", // Top and left on all items
-    baseRightBorder, // Right border for 2-col layout
-    baseBottomBorder, // Bottom border for 2-col layout
-    lgRightBorder, // Right border override for 3-col layout
-    lgBottomBorder, // Bottom border override for 3-col layout
-  ].filter(Boolean).join(" ");
+const FeatureCard = ({ title, description, image }: FeatureCardProps) => {
 
   // Helper function to convert API attachment path to full URL
   const getImageUrl = (attachPath: string | undefined): string => {
@@ -70,7 +45,7 @@ const FeatureCard = ({ title, description, index, totalItems, image }: FeatureCa
   const imageUrl = image ? getImageUrl(image) : Sparkle;
 
   return (
-    <div className={`flex flex-col items-start xl:p-[32px] md:p-[24px] p-[16px] xl:gap-[24px] md:gap-[20px] gap-[16px] ${borderClasses}`}>
+    <div className={`flex flex-col items-start xl:p-[32px] md:p-[24px] p-[16px] xl:gap-[24px] md:gap-[20px] gap-[16px] border border-[#CCEEF4]`}>
       <img 
         src={imageUrl} 
         alt="Feature icon" 

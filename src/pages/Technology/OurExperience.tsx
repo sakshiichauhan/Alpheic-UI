@@ -108,7 +108,7 @@ const OurExperience: React.FC<OurExperienceProps> = ({
             ))}
           </div>
         ) : experienceCards.length > 0 ? (
-          <div className="flex sm:flex-row flex-col sm:justify-between items-stretch xl:gap-10 lg:gap-8 md:gap-6 sm:gap-4 gap-2 mt-4 md:mt-10 lg:mt-12">
+          <div className="flex sm:flex-row flex-col justify-left items-stretch xl:gap-25 lg:gap-20 md:gap-15 sm:gap-10 gap-5 mt-4 md:mt-10 lg:mt-12">
             {experienceCards.map((card, index) => (
               <React.Fragment key={index}>
                 {index > 0 && (
