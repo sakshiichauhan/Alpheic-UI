@@ -9,6 +9,8 @@ export interface LatestInsight {
   read_time?: string;
   read?: string;
   about?: string;
+  tag?: string;
+  tags?: Array<{ tag?: string; Tag?: string } | string>;
 }
 
 interface LatestInsightsState {
@@ -96,6 +98,8 @@ export const fetchLatestInsights = createAsyncThunk(
             read_time: insightData.read_time,
             read: insightData.read || insightData.read_time,
             about: insightData.about || insightData.tag || 'Insights',
+            tag: insightData.tag,
+            tags: insightData.tags,
           } as LatestInsight;
         })
       );

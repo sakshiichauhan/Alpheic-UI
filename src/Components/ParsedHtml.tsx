@@ -7,10 +7,7 @@ interface ParsedHtmlProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> 
   as?: 'span' | 'div' | 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 }
 
-/**
- * Utility component to safely parse HTML content from API responses.
- * Removes invalid block elements (div, p) while preserving inline formatting (strong, em, etc.)
- */
+
 export const ParsedHtml = ({ 
   htmlContent, 
   as: Component = 'span',
@@ -18,6 +15,19 @@ export const ParsedHtml = ({
   ...props
 }: ParsedHtmlProps) => {
   if (!htmlContent) return null;
+
+  // Process the HTML content to convert \n to <br/> tags
+  const processHtmlContent = (content: string): string => {
+    // If it's already HTML (contains tags), convert \n to <br/> within the HTML
+    if (content.includes('<') && content.includes('>')) {
+      return content.replace(/\n/g, '<br/>');
+    }
+    
+    // If it's plain text, wrap in <p> and convert \n to <br/>
+    return `<p>${content.replace(/\n/g, '<br/>')}</p>`;
+  };
+
+  const processedContent = processHtmlContent(htmlContent);
 
   const options = {
     replace: (domNode: any): ReactElement | undefined => {
@@ -44,7 +54,7 @@ export const ParsedHtml = ({
     },
   };
 
-  const parsedContent = parse(htmlContent, options);
+  const parsedContent = parse(processedContent, options);
 
   return <Component className={className} {...props}>{parsedContent}</Component>;
 };

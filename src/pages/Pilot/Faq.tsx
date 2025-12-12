@@ -1,7 +1,8 @@
 import React, { useId, useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import { ChevronDown } from "lucide-react";
 
 type FaqItem = { q: string; a: string };
@@ -21,7 +22,8 @@ const Faq: React.FC = () => {
     return null;
   }
 
-  const heading = stripHtml(data?.faqs_heading, "Frequently Asked Questions");
+  // Get HTML content from backend for heading
+  const headingHtml = data?.faqs_heading || '<p>Frequently Asked Questions</p>';
   const items: FaqItem[] = data?.faqs_list?.map((faq) => ({
     q: faq.title || "",
     a: faq.description || "",
@@ -36,7 +38,6 @@ const Faq: React.FC = () => {
         { q: "How secure is the data handled by AI Agents?", a: "Founded in 2012, Hostripples is an Indian web hosting company headquartered in Nashik, Maharashtra. We provide best web hosting services globally with data centers in six countries including, India, the USA, the UK, Canada, Australia and Singapore. We are proud to be one of the top-rated hosts in the industry and are dedicated to raising the bar every day. You can learn more about us." },
       ];
 
-  const headingLines = heading.split("<br/>");
 
   return (
     <section className="mx-auto px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]
@@ -44,22 +45,16 @@ const Faq: React.FC = () => {
       <div className="grid md:gap-12 sm:gap-[32px] gap-[24px] lg:grid-cols-10 lg:gap-16">
         {/* Left — 40%, centered */}
         <div className="lg:col-span-4 flex flex-col lg:items-start items-center justify-center text-left 2xl:min-w-[480px]">
-          <h2 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-left lg:block hidden">
-            {headingLines.map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line}
-                {idx < headingLines.length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </h2>
-          <h2 className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center lg:hidden block">
-            {headingLines.map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line}
-                {idx < headingLines.length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </h2>
+          <ParsedHtml
+            htmlContent={headingHtml}
+            as="h2"
+            className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-left lg:block hidden"
+          />
+          <ParsedHtml
+            htmlContent={headingHtml}
+            as="h2"
+            className="2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] text-center lg:hidden block"
+          />
         </div>
 
         {/* Right — 60% */}

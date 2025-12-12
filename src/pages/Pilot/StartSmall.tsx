@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import bg from '@/assets/CareerPage/bg2.jpg';
 import { ArrowUpRight } from 'lucide-react';
 
@@ -21,17 +22,11 @@ const StartSmall: React.FC = () => {
     return null;
   }
 
-  const heading = stripHtml(
-    data?.card_heading,
-    'Start small. Prove value.<br/>  Scale with confidence.'
-  );
-  const description = stripHtml(
-    data?.card_description,
-    'Pick a pilot or ask for a custom mix for your stage and goals.'
-  );
+  // Get HTML content from backend
+  const headingHtml = data?.card_heading || '<p>Start small. Prove value.<br/>  Scale with confidence.</p>';
+  const descriptionHtml = data?.card_description || '<p>Pick a pilot or ask for a custom mix for your stage and goals.</p>';
   const primaryCta = data?.card_button1 || 'Choose a pilot';
   const secondaryCta = data?.card_button2 || 'Book a 15 minute call';
-  const headingLines = heading.split('<br/>');
   return (
     <section className="relative bg-white py-10 md:py-14 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 xl:px-[120px] 2xl:px-[200px] overflow-hidden font-sans">
       {/* Outer Container */}
@@ -47,17 +42,16 @@ const StartSmall: React.FC = () => {
         <div className="relative z-10 text-center flex flex-col gap-8 sm:gap-10">
           {/* Headings */}
           <div className="flex flex-col items-center gap-4 w-full">
-            <h2 className="text-[26px] sm:text-[36px] md:text-[48px] lg:text-[64px] font-semibold text-black leading-snug">
-            {headingLines.map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line}
-                {idx < headingLines.length - 1 && <br />}
-              </React.Fragment>
-            ))}
-            </h2>
-            <div className="text-[14px] sm:text-[16px] md:text-[18px] lg:text-[24px] font-urbanist text-[var(--medium-text)] leading-relaxed">
-            {description}
-            </div> 
+            <ParsedHtml
+              htmlContent={headingHtml}
+              as="h2"
+              className="text-[26px] sm:text-[36px] md:text-[48px] lg:text-[64px] font-semibold text-black leading-snug"
+            />
+            <ParsedHtml
+              htmlContent={descriptionHtml}
+              as="div"
+              className="text-[14px] sm:text-[16px] md:text-[18px] lg:text-[24px] font-urbanist text-[var(--medium-text)] leading-relaxed"
+            /> 
           </div>
 
           {/* Action Buttons */}

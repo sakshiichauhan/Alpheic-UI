@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import Spiral from "@/assets/Homepage/spiral.png"; 
 
 const PilotHeroSection: React.FC = () => {
@@ -18,12 +19,10 @@ const PilotHeroSection: React.FC = () => {
     return null;
   }
 
-  const title = stripHtml(data?.herosection_heading, "Pilot by Alpheric");
-  const kicker = stripHtml(data?.herosection_subheading, "Start small. Learn fast. Scale smart.");
-  const description = stripHtml(
-    data?.herosection_description,
-    "Validate ideas and systems in 2 to 4 weeks. Fixed scope. Measurable outcomes. Real users."
-  );
+  // Get HTML content from backend, with fallbacks
+  const titleHtml = data?.herosection_heading || '<p>Pilot by Alpheric</p>';
+  const kickerHtml = data?.herosection_subheading || '<p>Start small. Learn fast. Scale smart.</p>';
+  const descriptionHtml = data?.herosection_description || '<p>Validate ideas and systems in 2 to 4 weeks. Fixed scope. Measurable outcomes. Real users.</p>';
   const ctaPrimaryText = data?.herosection_button1 || "Explore Pilots";
   const ctaSecondaryText = data?.herosection_button2 || "Talk to a Strategist";
   const ctaPrimaryLink = "/Pilot";
@@ -37,24 +36,24 @@ const PilotHeroSection: React.FC = () => {
       <div className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:pt-[190px] xl:pt-[160px] lg:pt-[140px] md:pt-[120px] pt-[110px] 2xl:pb-[84px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px]">
         <div className="flex flex-col items-start gap-8">
           <div className="w-full flex flex-col items-start lg:gap-[16px] gap-[12px]">
-            <h1
+            <ParsedHtml
+              htmlContent={titleHtml}
+              as="h1"
               id="hero-heading"
-              className="2xl:text-[84px] xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[42px] text-[40px] font-semibold text-black text-left"
-            >
-              {title}
-            </h1>
+              className="2xl:text-[84px] xl:text-[72px] lg:text-[60px] md:text-[48px] sm:text-[42px] text-[40px]  text-black text-left"
+            />
 
-            <p 
-              className="2xl:text-[32px] xl:text-[28px] lg:text-[24px] md:text-[20px] sm:text-[16px] text-[14px] font-medium text-[var(--hero-text)] text-urbanist text-left"
-            >
-              {kicker}
-            </p>
+            <ParsedHtml
+              htmlContent={kickerHtml}
+              as="p"
+              className="2xl:text-[32px] xl:text-[28px] lg:text-[24px] md:text-[20px] sm:text-[16px] text-[14px] text-[var(--hero-text)] text-urbanist text-left"
+            />
 
-            <p 
+            <ParsedHtml
+              htmlContent={descriptionHtml}
+              as="p"
               className="2xl:text-[24px] xl:text-[20px] lg:text-[18px] md:text-[16px] sm:text-[14px] text-[12px] text-[var(--medium-text)] text-urbanist text-left"
-            >
-              {description}
-            </p>
+            />
 
             <div className="flex flex-row gap-4">
               <a

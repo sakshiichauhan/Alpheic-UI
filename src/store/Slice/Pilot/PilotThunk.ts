@@ -16,7 +16,40 @@ export type SelectSubPiolet = {
   doctype?: string;
 };
 
+export type ImageCard = {
+  name?: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
+  attach_image?: string;
+  title?: string;
+  description?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype?: string;
+};
+
+export type BannerTag = {
+  name?: string;
+  owner?: string;
+  creation?: string;
+  modified?: string;
+  modified_by?: string;
+  docstatus?: number;
+  idx?: number;
+  tag_name?: string;
+  parent?: string;
+  parentfield?: string;
+  parenttype?: string;
+  doctype?: string;
+};
+
 export type PilotData = {
+  active?: number;
   piolet_name?: string;
   description?: string;
   time?: string;
@@ -28,10 +61,23 @@ export type PilotData = {
   banner_time?: string;
   banner_button1?: string;
   banner_button2?: string;
-  banner_tags?: Array<{
-    tag_name?: string;
-  }>;
+  banner_tags?: BannerTag[];
   select_sub_piolets?: SelectSubPiolet[];
+  herosection?: number;
+  herosection_heading?: string;
+  herosection_subheading?: string;
+  herosection_button1?: string;
+  herosection_button2?: string;
+  whoithelps?: number;
+  whoithelps_heading?: string;
+  whoithelps_cards?: ImageCard[];
+  outcomeinweeks?: number;
+  outcomeinweeks_heading?: string;
+  outcomeinweeks_cards?: ImageCard[];
+  piolets?: number;
+  piolets_heading?: string;
+  piolets_list?: SelectSubPiolet[];
+  doctype?: string;
 };
 
 interface PilotState {
@@ -213,3 +259,7 @@ export const buildPilotImageUrl = (path?: string) => {
   if (path.startsWith('/files/')) return `https://work.alpheric.com${path}`;
   return path;
 };
+
+// If flag is undefined, allow render (fallback to defaults). Only hide when flag is explicitly 0.
+export const isPilotSectionEnabled = (flag?: number | string | null) =>
+  flag === undefined || flag === null ? true : Number(flag) === 1;

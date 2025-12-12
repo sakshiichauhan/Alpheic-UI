@@ -71,7 +71,20 @@ export type PilotPageData = {
   card_button1?: string;
   card_button2?: string;
   faqs_list?: FaqItem[];
-  insights_tags?: Array<{ tag?: string }>;
+  insights_tags?: Array<{
+    name?: string;
+    owner?: string;
+    creation?: string;
+    modified?: string;
+    modified_by?: string;
+    docstatus?: number;
+    idx?: number;
+    tag?: string;
+    parent?: string;
+    parentfield?: string;
+    parenttype?: string;
+    doctype?: string;
+  }>;
   piolets_list?: PilotCard[];
   piolets_tabs?: PilotTab[];
   // Homepage banner data

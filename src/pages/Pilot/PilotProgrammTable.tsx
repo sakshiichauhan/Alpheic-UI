@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
 import { fetchPilots, selectPilots, buildPilotImageUrl } from "@/store/Slice/Pilot/PilotThunk";
 import { fetchSubPilots, selectSubPilots, selectSubPilotLoading, selectSubPilotError } from "@/store/Slice/Pilot/SubPilotThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import ViewScope from "@/Components/PopUp/ViewScope";
 
 type TabCategory = 'Dreamers' | 'Startups' | 'SMBs' | 'Enterprises';
@@ -161,7 +162,8 @@ const PilotProgramTable = () => {
     return null;
   };
 
-  const heading = stripHtml(data?.piolet_table_heading);
+  // Get HTML content from backend for heading
+  const headingHtml = data?.piolet_table_heading || '<p>Pilot programs matched<br class="sm:hidden block" /> to your stage</p>';
   const navigate = useNavigate();
   
   // Set initial active tab to first tab from API only
@@ -267,16 +269,11 @@ const PilotProgramTable = () => {
   return (
     <section className="w-full px-4 sm:px-6 md:px-8 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] py-[40px] sm:py-[48px] md:py-[52px] lg:py-[64px]">
       <div className="mx-auto flex flex-col items-center lg:gap-[32px] md:gap-[24px] gap-[16px]">
-        <h2 className="xl:text-[64px] lg:text-[52px] md:text-[40px] sm:text-[32px] text-[24px] font-bold tracking-tight text-black text-center">
-          {heading ? (
-            heading
-          ) : (
-            <>
-              Pilot programs matched
-              <br className="sm:hidden block" /> to your stage
-            </>
-          )}
-        </h2>
+        <ParsedHtml
+          htmlContent={headingHtml}
+          as="h2"
+          className="xl:text-[64px] lg:text-[52px] md:text-[40px] sm:text-[32px] text-[24px]  tracking-tight text-black text-center"
+        />
 
         {/* Tabs Section */}
         {pilotPageLoading ? (

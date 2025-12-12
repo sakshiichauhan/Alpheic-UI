@@ -4,7 +4,8 @@ import dummyImage from "@/assets/dummy.png";
 import { DefaultButton } from "@/Components/Button";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchLatestInsights } from "@/store/Slice/LatestInsights/LatestInsightThunk";
-import { fetchPilotPageData, stripHtml, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled } from "@/store/Slice/Pilot/PilotPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 
 type Post = {
   id: string;
@@ -96,20 +97,75 @@ export default function LatestInsight() {
     return null;
   }
 
-  const heading = stripHtml(pilotData?.insights_heading, "Latest insights");
+  // Get HTML content from backend for heading
+  const headingHtml = pilotData?.insights_heading || '<p>Latest insights</p>';
   const buttonLabel = pilotData?.insights_button || "View All Insights";
-  const tags = (pilotData?.insights_tags?.map((tag) => tag.tag).filter(Boolean) as string[]) || [];
+  
+  // Extract allowed tags from insights_tags array
+  const allowedTags = (pilotData?.insights_tags
+    ?.map((tagItem) => tagItem.tag)
+    .filter((tag): tag is string => Boolean(tag))) || [];
+  
   const loading = insightsLoading;
 
-  const posts: Post[] = items.slice(0, 3).map((item, index) => ({
-    id: item.name || String(index),
-    date: formatDate(item.creation) || " ",
-    tag: item.about || tags[0] || "Insights",
-    readTime: item.read_time || item.read || "",
-    title: item.title || item.name || "Insight",
-    image: getImageUrl(item.image) || dummyImage,
-    href: item.name ? `/Insights/${encodeURIComponent(item.name)}` : undefined,
-  }));
+  // Helper function to extract all tag values from an insight item
+  const extractInsightTags = (item: any): string[] => {
+    const insightTags = item.tags || [];
+    let insightTagValues: string[] = [];
+    
+    if (Array.isArray(insightTags)) {
+      // Extract tag values from array
+      insightTagValues = insightTags
+        .map((tagItem: any) => {
+          if (typeof tagItem === 'string') {
+            return tagItem;
+          } else if (tagItem && typeof tagItem === 'object') {
+            return tagItem.tag || tagItem.Tag || '';
+          }
+          return '';
+        })
+        .filter((tag): tag is string => Boolean(tag));
+    } else if (typeof insightTags === 'string') {
+      insightTagValues = [insightTags];
+    }
+    
+    // Also check the single tag field as fallback
+    if (item.tag) {
+      insightTagValues.push(item.tag);
+    }
+    if (item.about) {
+      insightTagValues.push(item.about);
+    }
+    
+    return insightTagValues;
+  };
+
+  // Filter insights based on insights_tags if tags are provided
+  const filteredItems = allowedTags.length > 0
+    ? items.filter((item) => {
+        const insightTagValues = extractInsightTags(item);
+        // Check if any of the insight's tags match any of the allowed tags
+        return insightTagValues.some((tag) => allowedTags.includes(tag));
+      })
+    : items; // If no tags specified, show all insights
+
+  const posts: Post[] = filteredItems.slice(0, 3).map((item, index) => {
+    const insightTagValues = extractInsightTags(item);
+    
+    // Find matching tag from allowed tags, or use first available tag
+    const matchingTag = insightTagValues.find((tag) => allowedTags.includes(tag));
+    const displayTag = matchingTag || insightTagValues[0] || item.about || allowedTags[0] || "Insights";
+    
+    return {
+      id: item.name || String(index),
+      date: formatDate(item.creation) || " ",
+      tag: displayTag,
+      readTime: item.read_time || item.read || "",
+      title: item.title || item.name || "Insight",
+      image: getImageUrl(item.image) || dummyImage,
+      href: item.name ? `/Insights/${encodeURIComponent(item.name)}` : undefined,
+    };
+  });
 
   const renderPosts = posts.length ? posts : [
     {
@@ -127,9 +183,11 @@ export default function LatestInsight() {
       <div className="flex flex-col gap-[32px]">
         <div className="w-full mx-auto">
           {/* Heading */}
-          <h2 className="mb-10 text-center 2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] leading-none text-black">
-            {heading}
-          </h2>
+          <ParsedHtml
+            htmlContent={headingHtml}
+            as="h2"
+            className="mb-10 text-center 2xl:text-[96px] xl:text-[82px] md:text-[68px] sm:text-[48px] text-[32px] leading-none text-black"
+          />
 
           {/* Cards */}
           <div className="flex w-full lg:flex-row flex-col justify-center 2xl:gap-[48px] xl:gap-[40px] gap-[24px]">

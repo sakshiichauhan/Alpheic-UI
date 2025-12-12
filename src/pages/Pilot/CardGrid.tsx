@@ -37,6 +37,7 @@ type CardProps = {
   description: string;
   duration: string;
   calendarIcon?: string;
+  isActive?: boolean;
 };
 
 // --- 1. Hover Card Component ---
@@ -46,14 +47,40 @@ const HoverCard: React.FC<CardProps> = ({
   description,
   duration,
   calendarIcon,
+  isActive = true,
 }) => {
   const navigate = useNavigate();
 
+  // Get route based on title
+  const getRoute = (cardTitle: string): string | null => {
+    const routeMap: Record<string, string> = {
+     
+      "Dreamer": "/Dreamers",
+      // Add other routes as they become available
+      // "Startups": "/Startups",
+      // "SMBs": "/SMBs",
+      // "Enterprises": "/Enterprises",
+    };
+    return routeMap[cardTitle] || null;
+  };
+
   const handleCardClick = () => {
-    if (title === "Dreamers") {
-      navigate("/Dreamers");
+    // Only navigate if card is active
+    if (!isActive) return;
+    const route = getRoute(title);
+    if (route) {
+      navigate(route);
     }
-    // Add navigation for other cards if needed
+  };
+
+  const handleArrowClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click from firing
+    // Only navigate if card is active
+    if (!isActive) return;
+    const route = getRoute(title);
+    if (route) {
+      navigate(route);
+    }
   };
 
   return (
@@ -114,7 +141,19 @@ const HoverCard: React.FC<CardProps> = ({
             <span className="2xl:text-[16px] xl:text-[14px] sm:text-[12px] text-[10px] text-[var(--medium-text)] font-urbanist font-medium">{duration}</span>
           </div>
 
-          <div className="border border-[var(--color)] p-2">
+          <div 
+            className="border border-[var(--color)] p-2 cursor-pointer hover:bg-[var(--color)]/10 transition-colors"
+            onClick={handleArrowClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleArrowClick(e as any);
+              }
+            }}
+            aria-label={`Navigate to ${title} page`}
+          >
             {/* Replaced with Lucid Icon */}
             <ArrowUpRight className="text-black 2xl:w-[30px] xl:w-[24px] lg:w-[20px] md:w-[20px] sm:w-[16px] w-[12px] 2xl:h-[30px] xl:h-[24px] lg:h-[20px] md:h-[20px] sm:h-[16px] h-[12px]" />
           </div>
@@ -159,17 +198,23 @@ const CardGrid = () => {
     description: string;
     duration: string;
     calendarIcon?: string;
+    isActive: boolean;
   };
 
   const cardData = pilotNames
     .map((name): CardData | null => {
       const pilot = pilots[name];
       if (!pilot) return null;
+      
+      // Only include cards where active === 1 (page is visible)
+      if (pilot.active !== 1) return null;
+      
       return {
         title: pilot.piolet_name || name,
         description: pilot.description || '',
         duration: pilot.time || '',
         calendarIcon: pilot.calander_img || undefined,
+        isActive: true, // All cards in this array are active
       };
     })
     .filter((card): card is CardData => card !== null);
@@ -201,6 +246,7 @@ const CardGrid = () => {
             description={card.description}
             duration={card.duration}
             calendarIcon={card.calendarIcon}
+            isActive={card.isActive}
           />
         ))}
       </div>

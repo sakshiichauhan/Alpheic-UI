@@ -1,7 +1,8 @@
 import React, { useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotPageData, stripHtml, isEnabled, selectPilotBannerSteps } from "@/store/Slice/Pilot/PilotPageThunk";
+import { fetchPilotPageData, isEnabled, selectPilotBannerSteps } from "@/store/Slice/Pilot/PilotPageThunk";
+import { ParsedHtml } from "@/Components/ParsedHtml";
 import baground1 from "@/assets/Pilot_assets/bg.png";
 import o1 from "@/assets/CareerPage/o1.png";
 import o2 from "@/assets/CareerPage/o2.png";
@@ -61,7 +62,8 @@ const PilotsWork: React.FC = () => {
     return null;
   }
 
-  const title = stripHtml(data?.banner_name, 'How pilots work');
+  // Get HTML content from backend for banner name
+  const titleHtml = data?.banner_name || '<p>How pilots work</p>';
   const bannerSteps = useMemo(() => selectPilotBannerSteps(data), [data]);
 
   const stepsToRender: PilotStep[] = useMemo(() => {
@@ -105,9 +107,11 @@ const PilotsWork: React.FC = () => {
 
       {/* Main content container - has z-10, so it's on top of everything else */}
       <div className="relative z-10 flex flex-col items-center gap-[42px]">
-        <h2 className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[36px] text-[32px] font-semibold text-center">
-        {title}
-        </h2>
+        <ParsedHtml
+          htmlContent={titleHtml}
+          as="h2"
+          className="2xl:text-[72px] xl:text-[60px] lg:text-[48px] md:text-[36px] text-[32px] text-center"
+        />
         <div className="flex flex-col lg:flex-row gap-[24px] items-center lg:items-start w-full">
           {stepsToRender.map((step, index) => (
             <React.Fragment key={step.id || index}>
