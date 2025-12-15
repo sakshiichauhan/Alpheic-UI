@@ -65,3 +65,22 @@ export const findOriginalCaseStudyName = (
   return original || null;
 };
 
+/**
+ * Find original pilot name from cleaned URL name
+ * @param cleanedName - The cleaned name from URL (e.g., "Dreamer")
+ * @param pilotNames - Array of original pilot names from API
+ * @returns Original pilot name or null if not found
+ */
+export const findOriginalPilotName = (
+  cleanedName: string,
+  pilotNames: string[]
+): string | null => {
+  if (!cleanedName || pilotNames.length === 0) return null;
+  
+  // Find the original name that matches when cleaned
+  const original = pilotNames.find(name => 
+    cleanNameForUrl(name).toLowerCase() === cleanedName.toLowerCase()
+  );
+  return original || null;
+};
+

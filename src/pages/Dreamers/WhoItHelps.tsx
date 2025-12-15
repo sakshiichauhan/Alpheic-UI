@@ -1,9 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
-import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled, buildPilotImageUrl } from '@/store/Slice/Pilot/PilotThunk';
+import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled, selectPilots } from '@/store/Slice/Pilot/PilotThunk';
+import { findOriginalPilotName } from '@/utils/urlMapping';
 import { ParsedHtml } from '@/Components/ParsedHtml';
+
+// Helper function to convert API attachment path to full URL
+const getImageUrl = (path?: string | null): string => {
+  if (!path) return "";
+  const trimmed = path.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://work.alpheric.com${trimmed}`;
+};
 
 // --- 2. Reusable Feature Card Component ---
 
@@ -12,13 +23,17 @@ const FeatureCard: React.FC<{
   description: string;
   icon?: string;
 }> = ({ title, description, icon }) => {
+  const imageUrl = getImageUrl(icon);
+  
   return (
     <div className="flex flex-col 2xl:gap-4 gap-2 border border-[var(--border-color)] bg-white xl:p-6 lg:p-5 p-4 ">
-      {icon && (
+      {imageUrl && (
         <img 
-          src={buildPilotImageUrl(icon)} 
+          src={imageUrl} 
           alt={title} 
           className="text-black 2xl:w-[61px] 2xl:h-[61px] xl:w-[52px] xl:h-[52px] lg:w-[48px] lg:h-[48px] md:w-[40px] md:h-[40px] w-[32px] h-[32px] object-contain"
+          loading="lazy"
+          referrerPolicy="no-referrer"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
@@ -45,12 +60,21 @@ const FeatureCard: React.FC<{
 const WhoItHelpsSection: React.FC = () => {
   // Get pilot name from URL params
   const { pilotName } = useParams<{ pilotName?: string }>();
-  
-  // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
-  const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
-  const activePilotName = decodedPilotName || "Dreamer";
-
   const dispatch = useDispatch<AppDispatch>();
+  const pilots = useSelector(selectPilots);
+  
+  // Map cleaned URL name back to original pilot name for API calls
+  const activePilotName = useMemo(() => {
+    if (!pilotName) return "Dreamer"; // Default fallback
+    
+    const pilotNames = Object.keys(pilots).length > 0 
+      ? Object.keys(pilots) 
+      : ['Dreamer', 'Startups', 'SMBs', 'Enterprises']; // Fallback to default names
+    
+    const originalName = findOriginalPilotName(pilotName, pilotNames);
+    return originalName || pilotName;
+  }, [pilotName, pilots]);
+
   const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
   const loading = useSelector(selectPilotLoading);
 

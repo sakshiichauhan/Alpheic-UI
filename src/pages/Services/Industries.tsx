@@ -3,15 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ChevronRight } from "lucide-react";
 import type { AppDispatch, RootState } from "@/store";
 import { fetchServicePageData } from "@/store/Slice/UxDesgin/UxDesgin";
-import Indus1 from "@/assets/ServicePage/Industries/Indus1.png";
-import Indus2 from "@/assets/ServicePage/Industries/Indus2.png";
-import Indus3 from "@/assets/ServicePage/Industries/Indus3.png";
-import Indus4 from "@/assets/ServicePage/Industries/Indus4.png";
-import Indus5 from "@/assets/ServicePage/Industries/Indus5.png";
-import Indus6 from "@/assets/ServicePage/Industries/Indus6.png";
-import Indus7 from "@/assets/ServicePage/Industries/Indus7.png";
-import Indus8 from "@/assets/ServicePage/Industries/Indus8.png";
-import Indus9 from "@/assets/ServicePage/Industries/Indus9.png";
+import { fetchIndustryPageData } from "@/store/Slice/IndustryPage/IndustryThunk";
 import ParsedHtml from "@/Components/ParsedHtml";
 
 // Helper function to build image URL
@@ -30,8 +22,6 @@ interface Industry {
   isHighlighted?: boolean;
 }
 
-// Fallback icons array
-const fallbackIcons = [Indus1, Indus2, Indus3, Indus4, Indus5, Indus6, Indus7, Indus8, Indus9];
 
 const Industries: React.FC<{ 
   className?: string; 
@@ -44,6 +34,7 @@ const Industries: React.FC<{
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading } = useSelector((state: RootState) => state.servicePage);
+  const { l2Cards, loading: industryPageLoading } = useSelector((state: RootState) => state.industryPage);
   
   // Fetch service page data if serviceName is provided and data doesn't match
   useEffect(() => {
@@ -51,6 +42,13 @@ const Industries: React.FC<{
       dispatch(fetchServicePageData(serviceName));
     }
   }, [dispatch, serviceName, data, loading]);
+
+  // Fetch industry L2 data (for card_icon lookup)
+  useEffect(() => {
+    if (l2Cards.length === 0 && !industryPageLoading) {
+      dispatch(fetchIndustryPageData());
+    }
+  }, [dispatch, l2Cards.length, industryPageLoading]);
   
   // If no serviceName provided but we have data, use it (for cases where parent component already fetched)
 
@@ -59,8 +57,12 @@ const Industries: React.FC<{
     if (data?.linked_industries_list && data.linked_industries_list.length > 0) {
       return data.linked_industries_list.map((item, index) => {
         const industryName = item.industry_name || item.name1 || '';
-        const iconUrl = item.icon || item.attach_image;
-        const icon = iconUrl ? buildImageUrl(iconUrl) : fallbackIcons[index % fallbackIcons.length];
+        // Prefer icon from Industry L2 (card_icon), fallback to service API icon/attach_image
+        const matchedCard = l2Cards.find(
+          (card) => (card.name || '').trim().toLowerCase() === industryName.trim().toLowerCase()
+        );
+        const iconUrl = matchedCard?.card_icon || item.icon || item.attach_image;
+        const icon = iconUrl ? buildImageUrl(iconUrl) : '';
         // Use name1 as unique identifier, fallback to index if not available
         const uniqueId = item.name1 || `industry-${index}`;
         

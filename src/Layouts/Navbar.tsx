@@ -41,9 +41,9 @@ const MENU: MenuItem[] = [
   },
   { id: "Insights", label: "Insights", href: "/Insights" },
   { id: "Actions", label: "Actions", href: "/Actions" },
-  { id: "About Us", label: "About Us", href: "/About Us" },
+  { id: "About Us", label: "About Us", href: "/AboutUs" },
   { id: "Careers", label: "Careers", href: "/Careers" },
-  { id: "Contact Us", label: "Contact Us", href: "/Contact Us" },
+  { id: "Contact Us", label: "Contact Us", href: "/ContactUs" },
 ];
 
 /* ---------------- Utils ---------------- */

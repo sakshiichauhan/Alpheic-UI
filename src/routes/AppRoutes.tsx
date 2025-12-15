@@ -65,12 +65,11 @@ function AppRoutes() {
         <Route path="/case-study/:slug" element={<CaseStudy />} />
         <Route path="/thank-you/:type" element={<ThankYouWrapper />} />
         <Route path="/thank-you" element={<ThankYouWrapper />} />
-        <Route path="/Technology" element={<Technology />} />
         
         <Route path="/Industries/:industryName" element={<Technology />} />
         <Route path="/Services/:servicename/:name" element={<UxDesign />} />
       
-        <Route path="/Pilot/Dreamers/:pilotName?" element={<Dreamers />} />
+        <Route path="/Pilot/:pilotName" element={<Dreamers />} />
         <Route path="/start-pilot" element={<StartPilotForm />} />
         <Route path="/new-business-inquiry" element={<NewBusinessInquiry />} />
         <Route path="/UxDesgin" element={<UxDesign />} />

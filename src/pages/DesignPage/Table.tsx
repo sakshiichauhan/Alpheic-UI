@@ -242,7 +242,6 @@ const Table = () => {
   const programsFromAPI = useMemo(() => {
     const programs: Program[] = [];
     let programId = 1;
-    const seenPilots = new Set<string>();
 
     // Use defaultPilotNames if available, otherwise use all loaded pilots
     const pilotNamesToProcess = defaultPilotNames.length > 0 
@@ -251,19 +250,13 @@ const Table = () => {
 
     pilotNamesToProcess.forEach((pilotName) => {
       const pilot = pilots[pilotName];
-      const displayName = apiNameToDisplayName[pilotName] || pilot?.piolet_name as TabCategory;
+      const displayName = apiNameToDisplayName[pilotName];
       
-      if (!displayName) {
+      if (!displayName || !pilot?.select_sub_piolets) {
         return;
       }
 
-      // Check both select_sub_piolets and piolets_list
-      const subPilotList = pilot?.select_sub_piolets || pilot?.piolets_list;
-      if (!subPilotList || subPilotList.length === 0) {
-        return;
-      }
-
-      subPilotList.forEach((subPilotLink) => {
+      pilot.select_sub_piolets.forEach((subPilotLink) => {
         if (!subPilotLink.piolet) {
           return;
         }
@@ -273,23 +266,11 @@ const Table = () => {
           return;
         }
 
-        const pilotNameKey = subPilotData.piolet || subPilotLink.piolet || '';
-        
-        // Skip if we've already seen this pilot name (deduplicate)
-        if (pilotNameKey && seenPilots.has(pilotNameKey)) {
-          return;
-        }
-        
-        // Mark this pilot as seen
-        if (pilotNameKey) {
-          seenPilots.add(pilotNameKey);
-        }
-
         const program: Program = {
           id: programId++,
           category: displayName,
           objective: subPilotData.short_objective || subPilotData.objective || subPilotData.objective_name || '',
-          pilot: pilotNameKey,
+          pilot: subPilotData.piolet || subPilotData.piolet_name || subPilotData.name || subPilotLink.piolet || '',
           serviceMix: subPilotData.service_mix || subPilotData.serviceMix || subPilotData.service_mix_name || '',
           kpi: subPilotData.primary_kpi || subPilotData.kpi || subPilotData.primary_kpi_name || '',
           duration: subPilotData.duration || subPilotData.duration_time || '',

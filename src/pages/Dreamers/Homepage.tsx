@@ -1,20 +1,30 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/store";
-import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled } from "@/store/Slice/Pilot/PilotThunk";
+import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled, selectPilots } from "@/store/Slice/Pilot/PilotThunk";
+import { findOriginalPilotName } from "@/utils/urlMapping";
 import { ParsedHtml } from "@/Components/ParsedHtml";
 import Spiral from "@/assets/Homepage/spiral.png"; 
 
 const DreamersHomepage: React.FC = () => {
   // Get pilot name from URL params
   const { pilotName } = useParams<{ pilotName?: string }>();
-  
-  // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
-  const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
-  const activePilotName = decodedPilotName || "Dreamer";
-
   const dispatch = useDispatch<AppDispatch>();
+  const pilots = useSelector(selectPilots);
+  
+  // Map cleaned URL name back to original pilot name for API calls
+  const activePilotName = useMemo(() => {
+    if (!pilotName) return "Dreamer"; // Default fallback
+    
+    const pilotNames = Object.keys(pilots).length > 0 
+      ? Object.keys(pilots) 
+      : ['Dreamer', 'Startups', 'SMBs', 'Enterprises']; // Fallback to default names
+    
+    const originalName = findOriginalPilotName(pilotName, pilotNames);
+    return originalName || pilotName;
+  }, [pilotName, pilots]);
+
   const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
   const loading = useSelector(selectPilotLoading);
 
@@ -41,11 +51,11 @@ const DreamersHomepage: React.FC = () => {
   }
 
   // Get data from API with fallbacks
-  const kicker = pilotData?.piolet_name || activePilotName || "Dreamers";
-  const titleHtml = pilotData?.herosection_heading || '<div class="ql-editor read-mode"><p>Turn an idea into something people can <strong>see, use and trust</strong></p></div>';
-  const description = pilotData?.herosection_subheading || "We help you name it, shape it, ship it. Quick, focused pilots that validate value in two to four weeks.";
-  const ctaPrimaryText = pilotData?.herosection_button1 || "Dreamer Piolets";
-  const ctaSecondaryText = pilotData?.herosection_button2 || "Talk";
+  const kicker = pilotData?.piolet_name || activePilotName || "";
+  const titleHtml = pilotData?.herosection_heading || '';
+  const description = pilotData?.herosection_subheading || "";
+  const ctaPrimaryText = pilotData?.herosection_button1 || "";
+  const ctaSecondaryText = pilotData?.herosection_button2 || "";
   const ctaPrimaryLink = "/Pilot";
   const ctaSecondaryLink = "/LetsTalk";
 

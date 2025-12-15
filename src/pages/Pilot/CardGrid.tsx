@@ -52,23 +52,14 @@ const HoverCard: React.FC<CardProps> = ({
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    // Navigate to Dreamers page with pilot name parameter
-    // For "Dreamer", use /Pilot/Dreamers, for others use /Pilot/Dreamers/:pilotName
-    if (pilotName === "Dreamer") {
-      navigate("/Pilot/Dreamers");
-    } else {
-      navigate(`/Pilot/Dreamers/${encodeURIComponent(pilotName)}`);
-    }
+    // Navigate to Pilot page with pilot name
+    navigate(`/Pilot/${pilotName}`);
   };
 
   const handleArrowClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (pilotName === "Dreamer") {
-      navigate("/Pilot/Dreamers");
-    } else {
-      navigate(`/Pilot/Dreamers/${encodeURIComponent(pilotName)}`);
-    }
+    navigate(`/Pilot/${pilotName}`);
   };
 
   return (

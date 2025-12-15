@@ -270,7 +270,7 @@ const PracticeCard: React.FC<PracticeCardProps> = ({
             <div className="flex w-full items-center gap-4 md:w-auto">
               <div className="flex xl:h-[100px] md:h-[80px] h-[50px] xl:min-w-[111px] md:min-w-[75px] min-w-[50px] flex-none items-center justify-center bg-white/95">
                 {currentSlide.brandLogo ? (
-                  <img src={currentSlide.brandLogo} alt="Brand Logo" className="h-full w-full object-contain" />
+                  <img src={currentSlide.brandLogo} alt="Brand Logo" className="h-full w-full xl:max-w-[170px] md:max-w-[140px] max-w-[90px] object-contain" />
                 ) : (
                   <img src={Amber} alt="Amber" className="h-full w-full object-contain" />
                 )}

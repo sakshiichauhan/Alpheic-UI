@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/store';
-import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled } from '@/store/Slice/Pilot/PilotThunk';
+import { fetchPilotByName, selectPilot, selectPilotLoading, isPilotSectionEnabled, selectPilots } from '@/store/Slice/Pilot/PilotThunk';
+import { findOriginalPilotName } from '@/utils/urlMapping';
 import { ParsedHtml } from '@/Components/ParsedHtml';
 import Sparkles from "@/assets/logo/Sparky.png";
 
@@ -69,12 +70,21 @@ const OutcomeCard: React.FC<{
 const OutcomesSection: React.FC = () => {
     // Get pilot name from URL params
     const { pilotName } = useParams<{ pilotName?: string }>();
-    
-    // Decode the pilot name from URL and default to "Dreamer" for backward compatibility
-    const decodedPilotName = pilotName ? decodeURIComponent(pilotName) : undefined;
-    const activePilotName = decodedPilotName || "Dreamer";
-
     const dispatch = useDispatch<AppDispatch>();
+    const pilots = useSelector(selectPilots);
+    
+    // Map cleaned URL name back to original pilot name for API calls
+    const activePilotName = useMemo(() => {
+        if (!pilotName) return "Dreamer"; // Default fallback
+        
+        const pilotNames = Object.keys(pilots).length > 0 
+          ? Object.keys(pilots) 
+          : ['Dreamer', 'Startups', 'SMBs', 'Enterprises']; // Fallback to default names
+        
+        const originalName = findOriginalPilotName(pilotName, pilotNames);
+        return originalName || pilotName;
+    }, [pilotName, pilots]);
+
     const pilotData = useSelector((state: RootState) => selectPilot(state, activePilotName));
     const loading = useSelector(selectPilotLoading);
 

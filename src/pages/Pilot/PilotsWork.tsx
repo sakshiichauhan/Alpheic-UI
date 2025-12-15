@@ -124,7 +124,7 @@ const PilotsWork: React.FC = () => {
                 <img 
                   src={step.image} 
                   alt={step.title || `Step ${index + 1}`} 
-                  className="2xl:w-[94px] xl:w-[80px] lg:w-[64px] md:w-[52px] w-[46px] h-auto mb-[16px]"
+                  className="2xl:w-[94px] xl:w-[80px] lg:w-[64px] md:w-[52px] w-[46px] h-auto mb-[16px] mx-10"
                   onError={(e) => {
                     // Fallback to default image if one fails
                     const target = e.target as HTMLImageElement;
@@ -158,8 +158,8 @@ const PilotsWork: React.FC = () => {
                     <div className="h-full min-w-[3.50px] border-l-[3.50px] border-dashed border-white border-opacity-50"></div>
                   </div>
                   {/* Horizontal line for desktop */}
-                  <div className="hidden lg:block flex-1 min-w-[24px] self-stretch relative">
-                    <div className="absolute top-[47px] xl:-left-15 -left-10 xl:-right-15 -right-10 h-0 border-t-[3.50px] border-dashed border-white border-opacity-50"></div>
+                  <div className="hidden lg:block flex-1 self-stretch relative">
+                    <div className="absolute top-[47px] xl:-left-12 -left-10 xl:-right-10 -right-10 h-0 border-t-[3.50px] border-dashed border-white border-opacity-50"></div>
                   </div>
                 </>
               )}
