@@ -117,7 +117,7 @@ const WorkSection = ({
     }
   }, [dispatch, servicePageData, servicePageLoading]);
 
-  // Extract platform tag names from select_case_studies_by_tag
+  // Extract platform tag names from select_case_studies_by_tag (for fetching)
   const platformTagNames = useMemo(() => {
     if (!servicePageData?.select_case_studies_by_tag) {
       return [];
@@ -127,16 +127,15 @@ const WorkSection = ({
       .filter((name): name is string => Boolean(name));
   }, [servicePageData]);
 
-  // Generate categories from select_case_studies_by_tag (including "All")
+  // Generate categories from case studies' parent_tag (UI tabs)
   const categories = useMemo(() => {
-    if (!servicePageData?.select_case_studies_by_tag) {
-      return ["All"];
-    }
-    const categoryNames = servicePageData.select_case_studies_by_tag
-      .map(item => item.pl_name)
-      .filter((name): name is string => Boolean(name));
-    return ["All", ...categoryNames];
-  }, [servicePageData]);
+    const caseStudyArray = Object.values(caseStudies);
+    const tagNames = caseStudyArray
+      .map((cs: any) => cs.parent_tag as string | undefined)
+      .filter((tag): tag is string => !!tag && tag.trim().length > 0);
+    const unique = Array.from(new Set(tagNames));
+    return ["All", ...unique];
+  }, [caseStudies]);
 
   // Track if we've already fetched case studies for current platform tags
   const caseStudiesCount = Object.keys(caseStudies).length;
@@ -151,6 +150,13 @@ const WorkSection = ({
 
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
+  // Keep activeCategory in sync when categories change
+  useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory(categories[0] || "All");
+    }
+  }, [categories, activeCategory]);
+
   // Filter case studies based on active category
   const filteredCaseStudies = useMemo(() => {
     const caseStudyArray = Object.values(caseStudies);
@@ -159,8 +165,8 @@ const WorkSection = ({
       return caseStudyArray;
     }
 
-    return caseStudyArray.filter(caseStudy => {
-      return caseStudy.platform_tags?.some(tag => tag.pl_name === activeCategory);
+    return caseStudyArray.filter((caseStudy: any) => {
+      return (caseStudy.parent_tag || "").trim() === activeCategory;
     });
   }, [caseStudies, activeCategory]);
 
@@ -171,10 +177,8 @@ const WorkSection = ({
       const imageUrl = getFirstImage(caseStudy.attachments);
       const bgColor = defaultBgColors[index % defaultBgColors.length];
       
-      // Get platform tags as category (only use pl_name, no fallback)
-      const category = caseStudy.platform_tags && caseStudy.platform_tags.length > 0
-        ? caseStudy.platform_tags[0].pl_name
-        : "";
+      // Use parent_tag for UI category tab label
+      const category = (caseStudy as any).parent_tag || "";
 
       return {
         id: caseStudy.name,

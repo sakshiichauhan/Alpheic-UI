@@ -77,47 +77,9 @@ const WhyChooseUs = ({
   description = "Integral to our approach is a comprehensive user research phase, discovering general and niche audience needs through quantitative and qualitative research.",
   cards = []
 }: WhyChooseUsProps) => {
-  // Default fallback features if no cards provided
-  const defaultFeatures: WhyChooseUsCard[] = [
-    {
-      name: "user-first-thinking",
-      title: "User-First Thinking",
-      description: "Every interaction begins with understanding user needs and emotions.",
-      doctype: "ImageCard",
-    },
-    {
-      name: "collaborative-strategy",
-      title: "Collaborative Strategy",
-      description: "We work alongside your team to align design with business goals.",
-      doctype: "ImageCard",
-    },
-    {
-      name: "proven-impact",
-      title: "Proven Impact",
-      description: "Delivering measurable design-driven outcomes at scale.",
-      doctype: "ImageCard",
-    },
-    {
-      name: "modern-aesthetics",
-      title: "Modern Aesthetics",
-      description: "Clean, intuitive and conversion-focused visual language.",
-      doctype: "ImageCard",
-    },
-    {
-      name: "agile-approach",
-      title: "Agile Approach",
-      description: "We adapt to your workflow for seamless delivery.",
-      doctype: "ImageCard",
-    },
-    {
-      name: "research-backed",
-      title: "Research-Backed",
-      description: "Insights that drive real user engagement and satisfaction.",
-      doctype: "ImageCard",
-    },
-  ];
 
-  const features = cards.length > 0 ? cards : defaultFeatures;
+
+  const features = cards.length > 0 ? cards : [];
 
   return (
     <section className="px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px] 2xl:py-[84px] xl:py-[72px] lg:py-[60px] md:py-[52px] py-[40px] bg-background">

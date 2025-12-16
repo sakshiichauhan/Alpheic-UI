@@ -65,9 +65,9 @@ const relatedArticles: Article[] = [
 
 const FeaturedArticleCard: React.FC<{ article: Article }> = ({ article }) => {
   return (
-    <article className="flex flex-col gap-[24px]">
+    <article className="flex flex-col gap-6 sm:gap-7 md:gap-8">
       {/* Image */}
-      <div className="overflow-hidden max-h-[405px]">
+      <div className="overflow-hidden max-h-[320px] sm:max-h-[360px] md:max-h-[420px] xl:max-h-[460px] 2xl:max-h-[520px]">
         <img
           src={article.imageUrl}
           alt={article.title}
@@ -76,18 +76,18 @@ const FeaturedArticleCard: React.FC<{ article: Article }> = ({ article }) => {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col gap-4">
-        <span className="text-[24px] font-semibold text-[var(--color)]">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <span className="text-[16px] sm:text-[18px] md:text-[20px] lg:text-[22px] xl:text-[24px] font-semibold text-[var(--color)]">
           {article.category}
         </span>
-        <h2 className="xl:text-[40px] lg:text-[32px] md:text-[24px] text-[16px] font-medium text-black">
+        <h2 className="text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] xl:text-[40px] font-medium text-black leading-tight">
             {article.title}
         </h2>
         
         {/* Metadata */}
         {(article.date || article.readTime) && (
-          <div className="flex items-center gap-4 text-[20px] text-[var(--medium-text)] font-urbanist">
-            {article.date && <span className="">{article.date}</span>}
+          <div className="flex items-center gap-3 text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[var(--medium-text)] font-urbanist">
+            {article.date && <span>{article.date}</span>}
             <div className="flex items-center gap-1">
                {article.date && article.readTime && <span className="text-[var(--color)]">{article.readTime}</span>}
                {article.readTime && <span>{article.read}</span>}
@@ -104,25 +104,25 @@ const FeaturedArticleCard: React.FC<{ article: Article }> = ({ article }) => {
 
 const ArticleListItem: React.FC<{ article: Article }> = ({ article }) => {
   return (
-    <div className="flex flex-col gap-[18px]">
-    <li className="flex items-start gap-[30px]">
-      <Link to="/InsightsKeyDetails" className="flex items-start gap-[30px] w-full">
+    <div className="flex flex-col gap-4">
+    <li className="flex flex-col sm:flex-row items-start gap-4 sm:gap-[20px] lg:gap-[30px]">
+      <Link to="/InsightsKeyDetails" className="flex flex-col sm:flex-row items-start gap-4 sm:gap-[20px] lg:gap-[30px] w-full">
         {/* Thumbnail */}
         <img
           src={article.imageUrl}
           alt={article.title}
-          className="h-full w-full max-h-[117px] max-w-[117px] shrink-0 object-cover"
+          className="h-full w-full max-h-[90px] max-w-[90px] sm:max-h-[104px] sm:max-w-[104px] md:max-h-[112px] md:max-w-[112px] lg:max-h-[117px] lg:max-w-[117px] shrink-0 object-cover"
         />
         {/* Content */}
-        <div className="flex flex-col">
-          <span className="text-[16px] font-semibold font-urbanist text-[var(--color)] mb-1 leading-[1.2]">
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] sm:text-[14px] md:text-[15px] lg:text-[16px] font-semibold font-urbanist text-[var(--color)] leading-[1.2]">
             {article.category}
           </span>
-          <h3 className="text-[32px] font-medium text-black leading-[1.2]">
+          <h3 className="text-[18px] sm:text-[20px] md:text-[24px] lg:text-[28px] xl:text-[32px] font-medium text-black leading-[1.2]">
               {article.title}
           </h3>
           {article.type && (
-            <span className="text-[16px] font-urbanist text-[var(--medium-text)] leading-[1.2]">
+            <span className="text-[13px] sm:text-[14px] md:text-[15px] lg:text-[16px] font-urbanist text-[var(--medium-text)] leading-[1.2]">
               {article.type}
             </span>
           )}
@@ -139,20 +139,19 @@ const ArticleListItem: React.FC<{ article: Article }> = ({ article }) => {
 
 const BlogLayout: React.FC = () => {
   return (
-    <section className="bg-white pt-0 2xl:pb-[84px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]
- ">
+    <section className="bg-white pt-0 2xl:pb-[84px] xl:pb-[72px] lg:pb-[60px] md:pb-[52px] pb-[40px] px-4 sm:px-6 md:px-12 lg:px-[80px] xl:px-[120px] 2xl:px-[200px]">
       <div className="">
         {/* Main Grid */}
-        <div className="flex flex-row gap-[54px]">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[40px] xl:gap-[48px] 2xl:gap-[54px]">
           
           {/* Left Column (Featured) */}
-          <div className="w-full lg:max-w-[720px]">
+          <div className="w-full lg:max-w-[680px] xl:max-w-[720px]">
             <FeaturedArticleCard article={featuredArticle} />
           </div>
 
           {/* Right Column (List) */}
           <div className="w-full">
-            <ul className="flex flex-col gap-[30px]">
+            <ul className="flex flex-col gap-5 sm:gap-6 lg:gap-[24px] xl:gap-[26px] 2xl:gap-[30px]">
               {relatedArticles.map((article) => (
                 <ArticleListItem key={article.id} article={article} />
                 
